@@ -39,17 +39,17 @@ Optional inputs:
 
 **Example**
 ```
-nextflow run Methylation_pipeline.nf --files /Scripts --samples 'BSA','NM102','NM103','NM105' --cell_tpm E-MTAB-2770-query-results.tsv
+nextflow run Methylation_pipeline.nf --files /Scripts --samples 'Control','Sample1','Sample2','Sample3' --cell_tpm E-MTAB-2770-query-results.tsv
 ```
 
 **Example with BAM concatenation**
 ```
-nextflow run Methylation_pipeline.nf --files /Scripts --samples 'BSA','NM102','NM103','NM105' --cell_tpm E-MTAB-2770-query-results.tsv --concat
+nextflow run Methylation_pipeline.nf --files /Scripts --samples 'Control','Sample1','Sample2','Sample3' --cell_tpm E-MTAB-2770-query-results.tsv --concat
 ```
 
 **Example with different cutoffs**
 ```
-nextflow run Methylation_pipeline.nf --files /Scripts --samples 'BSA','NM102','NM103','NM105' --cell_tpm E-MTAB-2770-query-results.tsv --cutoff_regions 50 --cutoff_heatmap 75
+nextflow run Methylation_pipeline.nf --files /Scripts --samples 'Control','Sample1','Sample2','Sample3' --cell_tpm E-MTAB-2770-query-results.tsv --cutoff_regions 50 --cutoff_heatmap 75
 ```
 
 
