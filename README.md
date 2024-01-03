@@ -32,8 +32,8 @@ Mandatory inputs:
 
 Optional inputs:
 - `--concat` &nbsp;&nbsp;&nbsp; Option to concatenate BAM files from different runs
-- `--cutoff_regions` &nbsp;&nbsp; [Integer] cutoff for the difference between samples methylation metrics vs control methylation metrics for genomic annotations (default: 75)
-- `--cutoff_heatmap` &nbsp;&nbsp; [Integer] cutoff for the difference between samples methylation metrics vs control methylation metrics for clustering analysis (default: 100)
+- `--cutoff_regions` &nbsp;&nbsp; [Integer] cutoff (from 0 to 100) for the difference between samples methylation metrics vs control methylation metrics for genomic annotations (default: 75)
+- `--cutoff_heatmap` &nbsp;&nbsp; [Integer] cutoff (from 0 to 100) for the difference between samples methylation metrics vs control methylation metrics for clustering analysis (default: 100)
 
 ### Examples
 
