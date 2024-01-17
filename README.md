@@ -7,8 +7,8 @@ The pipeline inputs **BAM files**, and outputs multiple txt and bedGraph files (
 - Differentially methylated regions (.bedGraph)
 - Correlation matrix and PCA (.png)
 - Heatmap with signature differences between the controls and samples (.pdf)
-- Genomic distribution of CpGs with different methylation frequencies between samples and controls (.png)
-- Genomic distribution of differentially methylated regions (.png)
+- Genomic distribution across the **hg38 reference genome** of CpGs with different methylation frequencies between samples and controls (.png)
+- Genomic distribution across the **hg38 reference genome** of differentially methylated regions (.png)
 - Closest RefSeq genes **(version from 2023-11-24)** to the differentially methylated regions (.txt/.bedGraph)
 - Venn diagram of the closest genes (only if two or more samples were used as input) (.png)
 
