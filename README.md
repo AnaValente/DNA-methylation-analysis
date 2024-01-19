@@ -34,7 +34,7 @@ Mandatory inputs:
 
 Optional inputs:
 - `--concat ` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Option to concatenate BAM files from different runs
-- `--cell_tpm` &nbsp;&nbsp;&nbsp; Optional file containing two collumns, one with gene names and other with expression levels in transcripts per million (TPM) specific to cell type (available in: https://www.ebi.ac.uk/gxa/experiments/E-MTAB-2770/Results) for gene name filtering
+- `--cell_tpm` &nbsp;&nbsp;&nbsp; Optional file containing two collumns, one with gene names and the other with expression levels in transcripts per million (TPM) for a cell line or cell type identical or similar to the cells under study (available in: https://www.ebi.ac.uk/gxa/experiments/E-MTAB-2770/Results) for gene name filtering
 - `--cutoff_regions` &nbsp;&nbsp; [Integer] cutoff (from 1 to 100) for the difference between samples methylation frequency vs control methylation frequency for genomic annotations (default: 75)
 - `--cutoff_heatmap` &nbsp;&nbsp; [Integer] cutoff (from 1 to 100) for the difference between samples methylation frenquecy vs control methylation frequency for clustering analysis (default: 100)
 
