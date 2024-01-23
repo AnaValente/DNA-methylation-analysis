@@ -1,143 +1,111 @@
 #!/usr/bin/env nextflow
 
-log.info"""\
-
-         M E T H Y L A T I O N   A N A L Y S I S   P I P E L I N E
-         =========================================================
-         """
-
 //params
 params.files = false
 params.samples = false
 params.concat = false
-params.cell_tpm = 'E-MTAB-2770-query-results.tsv'
+params.replicates = false
+params.cell_tpm = false
 params.cutoff_regions = 75
 params.cutoff_heatmap = 100
+params.genome = false
+
+c_green = "\033[0;32m"
+c_blue = "\033[0;36m"
+c_red = "\033[0;31m"
+
+c_reset = "\033[0m"
+
+log.info"""
+       ${c_blue}. ,-"-.   ,-"-. ,-"-.   ,-"-. ,-"-.   ,-"-. ,-"-.    ,-"-. ,-"-.   ,${c_reset}
+       ${c_blue} / | | \\ / | | / | | \\ / | | / | | \\ / | | / | | \\  / | | / | | \\ /${c_reset}
+        D N A   M E T H Y L A T I O N   A N A L Y S I S   P I P E L I N E
+       ${c_blue}/ \\| | |\\| | |/ \\| | |\\| | |/ \\| | |\\| | |/ \\| | |\\|  | |/ \\| | |\\ ${c_reset}
+          ${c_blue}`-!-' `-!-'   `-!-' `-!-'   `-!-' `-!-'   `-!-'  `-!-'   `-!-' `-${c_reset}
+        """.stripIndent()
 
 process REFERENCE_GENOME_HG38 {
     // Download fasta file of the reference genome 
     
     publishDir "./Pipeline_results/Methyldackel", mode: "copy"
-
+    
+    input:
+    path genome
+    
     output:
     path "*"
 
     """
-    curl http://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz | gunzip -c > hg38.fa
+
+    gunzip -c ${genome} > hg38.fa
     """
 }
 
-process CONCATENATE_BAMS_REP1 {
-    // Concatenate the replicate 1 bam files for each sample
+process CONCATENATE_BAMS {
+    // Concatenate bam files for each sample
 
     publishDir "./Pipeline_results/Concatenated_files", mode: "copy"
     
-
     input:
     path folder
     val samples
+    val n_replicates
 
     output:
     path "${samples}*_library_sorted.b*"
 
-    """
-    samtools merge ${samples}_rep1_library.bam ${samples}_rep1*.bam && samtools sort ${samples}_rep1_library.bam -o ${samples}_rep1_library_sorted.bam -O BAM && samtools index ${samples}_rep1_library_sorted.bam
-    samtools flagstat ${samples}_rep1_library_sorted.bam > ${samples}_rep1_report.txt
-    """
+    shell:
+    '''
+    for i in $(seq 1 !{n_replicates})
+    do
+        if compgen -G "!{samples}_rep${n}*.bam" > /dev/null; then
+            samtools merge !{samples}_rep${n}_library.bam !{samples}_rep${n}*.bam && samtools sort !{samples}_rep${n}_library.bam -o !{samples}_rep${n}_library_sorted.bam -O BAM && samtools index !{samples}_rep${n}_library_sorted.bam
+        fi
+    done
+   '''
 }
 
-process CONCATENATE_BAMS_REP2 {
-    // Concatenate the replicate 2 bam files for each sample
-
-    publishDir "./Pipeline_results/Concatenated_files", mode: "copy"
-    
-
-    input:
-    path folder
-    val nano
-
-    output:
-    path "${nano}*_library_sorted.b*"
-    
-    """
-    samtools merge ${nano}_rep2_library.bam ${nano}_rep2*.bam && samtools sort ${nano}_rep2_library.bam -o ${nano}_rep2_library_sorted.bam -O BAM && samtools index ${nano}_rep2_library_sorted.bam
-    samtools flagstat ${nano}_rep2_library_sorted.bam > ${nano}_rep2_report.txt
-    """
-}
-
-process METHYLDACKEL_REP1 {
-    // Methylation calling for replicate 1
+process METHYLDACKEL {
+    // Methylation calling
 
     publishDir './Pipeline_results/Methyldackel', mode: 'copy'
     
     input:
     path folder
-    path hg38
     path bam_rep1
+    path hg38
     val samples
-
+    val n_replicates
 
     output:
     path "*.bedGraph"
 
     """
-    if [ -f ${samples}_rep1_library_sorted.bam ]; then
-        MethylDackel extract --mergeContext -l CpGIslands_mod.bed hg38.fa ${samples}_rep1_library_sorted.bam
-        MethylDackel extract --mergeContext -l CpGIslands_mod.bed --fraction hg38.fa ${samples}_rep1_library_sorted.bam
-    else
-        mv ${samples}_rep1*.bam ${samples}_rep1_library_sorted.bam
-        MethylDackel extract --mergeContext -l CpGIslands_mod.bed hg38.fa ${samples}_rep1_library_sorted.bam
-        MethylDackel extract --mergeContext -l CpGIslands_mod.bed --fraction hg38.fa ${samples}_rep1_library_sorted.bam
-    fi    
-    """
-}
-
-process METHYLDACKEL_REP2 {
-    // Methylation calling for replicate 2
-
-    publishDir './Pipeline_results/Methyldackel', mode: 'copy'
-    
-    input:
-    path folder
-    path hg38
-    path bam_rep1
-    val samples
-
-    output:
-    path "*.bedGraph"
-
-    """
-    if [ -f ${samples}_rep2_library_sorted.bam ]; then
-        MethylDackel extract --mergeContext -l CpGIslands_mod.bed hg38.fa ${samples}_rep2_library_sorted.bam
-        MethylDackel extract --mergeContext -l CpGIslands_mod.bed --fraction hg38.fa ${samples}_rep2_library_sorted.bam
-    else
-        mv ${samples}_rep2*.bam ${samples}_rep2_library_sorted.bam
-        MethylDackel extract --mergeContext -l CpGIslands_mod.bed hg38.fa ${samples}_rep2_library_sorted.bam
-        MethylDackel extract --mergeContext -l CpGIslands_mod.bed --fraction hg38.fa ${samples}_rep2_library_sorted.bam
-    fi    
+    ./methyldackel.sh ${n_replicates} ${samples}
     """
 }
 
 process CORRELATION_AND_CLUSTERING {
     // correlation and clustering analysis
-
-    publishDir './Pipeline_results', mode: 'copy'
 	
     input:
     path folder
-    path bedgraph_rep1
-    path bedgraph_rep2
+    path bedgraphs
     val samples
     val number_samples
     val control
     val cutoff_regions
     val cutoff_heatmap
+    val n_replicates
 
     output:
     path "*"
 
+    publishDir './Pipeline_results', pattern:"*png" , mode: 'copy'
+    publishDir './Pipeline_results', pattern:"*pdf" , mode: 'copy'
+
     """
-	python3 methyldackel_cluster_table.py ${bedgraph_rep1} ${bedgraph_rep2} ${samples} ${number_samples} ${control} ${cutoff_regions} ${cutoff_heatmap} && ./correlation_analysis.R correlation.csv && ./heatmap.R diff_methylation_filtered.csv 
+	python3 methyldackel_cluster_table.py ${bedgraphs} ${samples} ${number_samples} ${control} ${cutoff_regions} ${cutoff_heatmap} ${n_replicates} && ./correlation_analysis.R correlation.csv ${number_samples} ${n_replicates} ${control} && ./heatmap.R diff_methylation_filtered.csv 
     """
 }
 
@@ -148,31 +116,42 @@ process METILENE {
     
 	
     input:
-    path bedgraph_rep1
-    path bedgraph_rep2
+    path folder
+    path bedgraphs
     val control
     val samples
+    val n_replicates
 
     output:
     path "*_qval.0.05.bedgraph"
 
-    """
-    if [ -f ${control}_rep2*.bedGraph ]; then
-        metilene_input.pl --in1 ${samples}_rep1_library_sorted_CpG.meth.bedGraph,${samples}_rep2_library_sorted_CpG.meth.bedGraph --in2 ${control}_rep1_library_sorted_CpG.meth.bedGraph,${control}_rep2_library_sorted_CpG.meth.bedGraph
-        metilene -a g1 -b g2 metilene_g1_g2.input | sort -V -k1,1 -k2,2n > metilene_${samples}_${control}.bedgraph
-        metilene_output.pl -q metilene_${samples}_${control}.bedgraph -o ./metilene_${samples}_${control}
+    shell:
+    '''
+    samples_rep="!{samples}_rep1_library_sorted_CpG.meth.bedGraph"
+    control_rep="!{control}_rep1_library_sorted_CpG.meth.bedGraph"
+
+    for i in $(seq 2 !{n_replicates})
+    do
+        samples_rep=${samples_rep}",!{samples}_rep${i}_library_sorted_CpG.meth.bedGraph"
+        control_rep=${control_rep}",!{control}_rep${i}_library_sorted_CpG.meth.bedGraph"
+    done
+
+    if [ -f !{control}_rep2*.bedGraph ]; then
+        metilene_input.pl --in1 ${samples_rep} --in2 ${control_rep}
+        metilene -a g1 -b g2 metilene_g1_g2.input | sort -V -k1,1 -k2,2n > metilene_!{samples}_!{control}.bedgraph
+        metilene_output.pl -q metilene_!{samples}_!{control}.bedgraph -o ./metilene_!{samples}_!{control}
     else
-        metilene_input.pl --in1 ${samples}_rep1_library_sorted_CpG.meth.bedGraph,${samples}_rep2_library_sorted_CpG.meth.bedGraph --in2 ${control}_rep1_library_sorted_CpG.meth.bedGraph
-        metilene -a g1 -b g2 metilene_g1_g2.input | sort -V -k1,1 -k2,2n > metilene_${samples}_${control}.bedgraph
-        metilene_output.pl -q metilene_${samples}_${control}.bedgraph -o ./metilene_${samples}_${control}
+        metilene_input.pl --in1 !{samples}_rep1_library_sorted_CpG.meth.bedGraph,!{samples}_rep2_library_sorted_CpG.meth.bedGraph --in2 !{control}_rep1_library_sorted_CpG.meth.bedGraph
+        metilene -a g1 -b g2 metilene_g1_g2.input | sort -V -k1,1 -k2,2n > metilene_!{samples}_!{control}.bedgraph
+        metilene_output.pl -q metilene_!{samples}_!{control}.bedgraph -o ./metilene_!{samples}_!{control}
     fi
-    """
+    '''
 }
 
-process GENOMIC_REGIONS { 
+process GENOMIC_REGIONS {
     // Genomic regions retrieval
 
-    publishDir './Pipeline_results', mode: 'copy'
+    publishDir './Pipeline_results/', mode: 'copy'
     
 	
     input:
@@ -191,7 +170,7 @@ process GENOMIC_REGIONS {
 process GENE_NAMES {
     // Gene name retrieval
 
-    publishDir './Pipeline_results/Gene_Names', mode: 'copy'
+    publishDir './Pipeline_results/Gene_names', mode: 'copy'
     
 	
     input:
@@ -212,7 +191,7 @@ process GENE_NAMES {
 process VENN_DIAGRAM {
     // Venn Diagram
 
-    publishDir './Pipeline_results', mode: 'copy'
+    publishDir './Pipeline_results/', mode: 'copy'
     
 	
     input:
@@ -228,7 +207,39 @@ process VENN_DIAGRAM {
     """
 }
 
+process FINAL_REPORT {
+    
+    publishDir './Pipeline_results', mode: 'copy'
+
+    input:
+    path bams
+    path methyldackel
+    path metilene
+    path correlation
+    val cutoff_heatmap
+
+    output:
+    path "Final_report.txt"
+
+    shell:
+    '''
+    if [ -f *.bam ]; then
+        echo -e "Concatenated BAMS:\\n=================" >> Final_report.txt
+        echo "zgrep -c '@' *bam" "reads" >> Final_report.txt
+    fi
+
+    echo -e "Methyldackel:\\n=============" >> Final_report.txt
+    wc -l *meth.bedGraph | sed 's/_library.*//g' | awk '{print $2 ":", $1-1, "CpG sites\\n"}' >> Final_report.txt
+    echo -e "\\nCorrelation and clustering:\\n===========================" >> Final_report.txt
+    echo -e "$(wc -l correlation.csv | awk '{print $1-1}')" "CpG sites were used for the correlation matrix and PCA\\n" >> Final_report.txt
+    echo -e "$(wc -l diff_methylation_filtered.csv | awk '{print $1-1}')" "CpG sites were used for the hierarchical clustering heatmap with a difference of !{cutoff_heatmap}% between the controls and samples\\n" >> Final_report.txt
+    echo -e "\\nMetilene:\\n=========" >> Final_report.txt
+    wc -l metilene*_qval.0.05.bedgraph | sed 's/metilene_//' | sed 's/_qval.*//g' | awk '{print $2 ":", $1, "differentially methylated regions\\n"}' >> Final_report.txt
+    '''
+}
+
 workflow {
+
     files = Channel.fromPath(params.files).collect()
     list_samples = params.samples.split(',') as List
     samples_chn = Channel.from(list_samples)
@@ -236,25 +247,29 @@ workflow {
     samples_chn2 = Channel.from(list_samples)
     samples_names = list_samples.toString().replace("[", "").replace("]", "").replace(",", "")
 
-    REFERENCE_GENOME_HG38()
+    REFERENCE_GENOME_HG38(Channel.fromPath(params.genome))
+    
     if (params.concat) {
-        CONCATENATE_BAMS_REP1(files, samples_chn)
-        CONCATENATE_BAMS_REP2(files, samples_chn)
-        METHYLDACKEL_REP1(files,REFERENCE_GENOME_HG38.out.collect(),CONCATENATE_BAMS_REP1.out.collect(),samples_chn)
-        METHYLDACKEL_REP2(files,REFERENCE_GENOME_HG38.out.collect(),CONCATENATE_BAMS_REP2.out.collect(),samples_chn)
-        CORRELATION_AND_CLUSTERING(files, METHYLDACKEL_REP1.out.collect(), METHYLDACKEL_REP2.out.collect(),samples_names,list_samples.size(),control,params.cutoff_regions,params.cutoff_heatmap)
-        METILENE(METHYLDACKEL_REP1.out.collect(), METHYLDACKEL_REP2.out.collect(), control, samples_chn2)
-        GENOMIC_REGIONS(files, CORRELATION_AND_CLUSTERING.out.collect(), METILENE.out.collect())
-        GENE_NAMES(files,METILENE.out.collect(), control, samples_chn2,params.cell_tpm)
-        VENN_DIAGRAM(files, GENE_NAMES.out.collect())
-        }
+        CONCATENATE_BAMS(files, samples_chn,params.replicates)
+        METHYLDACKEL(files, CONCATENATE_BAMS.out.collect(), REFERENCE_GENOME_HG38.out.collect(), samples_chn,params.replicates)
+    }
     else {
-        METHYLDACKEL_REP1(files,REFERENCE_GENOME_HG38.out.collect(),[],samples_chn)
-        METHYLDACKEL_REP2(files,REFERENCE_GENOME_HG38.out.collect(),[],samples_chn)
-        CORRELATION_AND_CLUSTERING(files, METHYLDACKEL_REP1.out.collect(), METHYLDACKEL_REP2.out.collect(),samples_names,list_samples.size(),control,params.cutoff_regions,params.cutoff_heatmap)
-        METILENE(METHYLDACKEL_REP1.out.collect(),METHYLDACKEL_REP2.out.collect(), control, samples_chn2)
-        GENOMIC_REGIONS(files, CORRELATION_AND_CLUSTERING.out.collect(), METILENE.out.collect())
-        GENE_NAMES(files, METILENE.out.collect(), control, samples_chn2,params.cell_tpm)
+        METHYLDACKEL(files, [], REFERENCE_GENOME_HG38.out.collect(), samples_chn,params.replicates)
+    }
+
+    CORRELATION_AND_CLUSTERING(files, METHYLDACKEL.out.collect(), samples_names, list_samples.size(), control, params.cutoff_regions, params.cutoff_heatmap, params.replicates)
+    METILENE(files, METHYLDACKEL.out.collect(), control, samples_chn2, params.replicates)
+    GENOMIC_REGIONS(files, CORRELATION_AND_CLUSTERING.out.collect(), METILENE.out.collect())
+    GENE_NAMES(files, METILENE.out.collect(), control, samples_chn2, params.cell_tpm)
+
+    if (list_samples.size() > 1 & list_samples.size() <= 7) {
         VENN_DIAGRAM(files, GENE_NAMES.out.collect())
-        }
+    }
+
+    if (params.concat) {
+        FINAL_REPORT(CONCATENATE_BAMS.out.collect(), METHYLDACKEL.out.collect(), CORRELATION_AND_CLUSTERING.out.collect(), METILENE.out.collect(), params.cutoff_heatmap)
+    }
+    else {
+        FINAL_REPORT([], METHYLDACKEL.out.collect(), CORRELATION_AND_CLUSTERING.out.collect(), METILENE.out.collect(), params.cutoff_heatmap)
+    }
 }
