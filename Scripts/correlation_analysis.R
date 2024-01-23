@@ -5,10 +5,11 @@ library("ggplot2")
 library("RColorBrewer")
 library("factoextra")
 library("ggrepel")
+library("scales")
 
 args = commandArgs(trailingOnly = TRUE)
 
-correlation = function(df) {
+correlation = function(df, n_samples, n_replicates,control) {
 
   df = read.csv(df, sep = "\t")
   df = df[, 4:ncol(df)] # remove string collumns
@@ -24,17 +25,28 @@ correlation = function(df) {
   scores = as.data.frame(pca$rotation)
   scores = scores[1:3] # choose only the first principal components
 
-  colours = c("#f8766D", "#f8766D", "#7cae00", "#7cae00", "#00bfc4", "#00bfc4", "#C77CFF", "#C77CFF", "#00B0F6", "#00B0F6", "#D89000", "#D89000")
+  colors = c()
 
-  ggplot(scores, aes(PC1, PC2)) + geom_point(colour = head(colours, nrow(scores)), size = 2) +
+  for (i in hue_pal()(as.integer(n_samples)+1)) {
+    colors =  c(colors,rep(i,n_replicates))
+  }
+
+  
+  if(paste(control,'_rep2',sep = '') %in% colnames(df)) {
+    colors = colors
+  }else{
+    colors = colors[-1]
+  }
+
+  ggplot(scores, aes(PC1, PC2)) + geom_point(colour = colors, size = 2) +
     geom_text_repel(aes(label = rownames(scores)), size = 3) + 
     labs(x = sprintf("PC1 (%s%% of the variance explained)", round(summ$importance[2, 1], digits = 2) * 100), y = sprintf("PC2 (%s%% of the variance explained)", round(summ$importance[2, 2], digits = 2) * 100)) + 
     theme_linedraw() + theme(axis.line = element_line(color = "black"), plot.background = element_blank(), panel.grid.minor = element_blank(), panel.grid.major = element_blank()) # plot of the PCA scores of PC1 and PC2
   ggsave("PCA_analysis_PC1_PC2.png", width = 5, height = 4, dpi = 400)
 
-  ggplot(scores, aes(PC2, PC3)) + geom_point(colour = head(colours, nrow(scores)), size = 2) +
+  ggplot(scores, aes(PC2, PC3)) + geom_point(colour = colors, size = 2) +
     geom_text_repel(aes(label = rownames(scores)), size = 3) + 
-    labs(x = sprintf("PC2 (%s%% of the variance explained)", round(summ$importance[2, 3], digits = 2) * 100), y=sprintf("PC3 (%s%% of the variance explained)", round(summ$importance[2, 4], digits = 2) * 100)) + 
+    labs(x = sprintf("PC2 (%s%% of the variance explained)", round(summ$importance[2, 2], digits = 2) * 100), y=sprintf("PC3 (%s%% of the variance explained)", round(summ$importance[2, 3], digits = 2) * 100)) + 
     theme_linedraw() + theme(axis.line = element_line(color = "black"), plot.background = element_blank(), panel.grid.minor = element_blank(), panel.grid.major = element_blank())# plot of the PCA scores of PC2 and PC3
   ggsave("PCA_analysis_PC2_PC3.png", width = 5, height = 4, dpi = 400)
 
@@ -43,4 +55,4 @@ correlation = function(df) {
 
 }
 
-correlation(args[1])
+correlation(args[1],args[2],args[3],args[4])
