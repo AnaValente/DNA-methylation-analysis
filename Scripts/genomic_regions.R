@@ -32,14 +32,29 @@ genomic_regions_meth = function(annotations) {
   for (i in seq(1,length(annots_sum))) {
     name = sub("_.*", "", as.character(annotatr_files[[i]])) # remove unwanted characters from sample name
     name  = sub("./", "", name)
+    print(name)
 
     colnames(annots_sum[[i]]) = c("annot_type", name)
   }
 
   # merge list annotations into one DataFrame
   df_list = Reduce(function(x, y, all = TRUE) merge(x, y, all = TRUE), annots_sum, accumulate = FALSE)
+
+  annots_types_old = c("hg38_cpg_islands", "hg38_genes_1to5kb", "hg38_genes_3UTRs", "hg38_genes_5UTRs", "hg38_genes_cds", "hg38_genes_exonintronboundaries", "hg38_genes_exons", "hg38_genes_firstexons", "hg38_genes_intergenic", "hg38_genes_intronexonboundaries", "hg38_genes_introns", "hg38_genes_promoters")
+  annots_types_new = c("CpG islands", "1to5kb", "3UTRs", "5UTRs", "cds", "exon/intron boundaries", "exons", "first exons", "intergenic", "intron/exon boundaries", "introns", "promoters")
+
+  #replace annotations names for new annotation names
+  for (n in seq(1, nrow(df_list))) {
+    for (j in 1:12) {
+      if (df_list[n, "annot_type"] == annots_types_old[j]) {
+        df_list[n, "annot_type"] = annots_types_new[j]
+      }
+    }
+  }
+
+  df_list = as.data.frame(df_list)
   row.names(df_list) = df_list$annot_type
-  df_list = df_list[, 2:ncol(df_list)] # remove annotation names
+  df_list = df_list[, 2:ncol(df_list), drop=FALSE] # remove annotation names
 
   # melt DataFrame collumns into rows
   matrix = melt(as.matrix(df_list), value.name = "Count", varnames = c("Annotations", "Nanomaterial"))
@@ -47,9 +62,8 @@ genomic_regions_meth = function(annotations) {
   # plot matrix
   ggplot(matrix, aes(fill = Nanomaterial, y = Count, x = Annotations)) + geom_bar(stat = "identity", position = position_dodge(0.92), width = 0.9) +
     theme_light() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1)) +
-    scale_x_discrete(labels = c("CpG islands", "1to5kb", "3UTRs", "5UTRs", "cds", "exon/intron boundaries", "exons", "first exons", "intergenic", "intron/exon boundaries", "introns", "promoters")) +
-    labs(title = "", y = "Nº of CpG sites") + theme(plot.title = element_text(hjust = 0.5))
-  ggsave("NM_annotations.png", width = 20, height = 15, units = "cm")
+    labs(y = "Nº of CpG sites") + scale_x_discrete() + scale_y_continuous(expand = expansion(mult = c(0, .1)))
+  ggsave("genomic_regions_cpg.png", width = 20, height = 15, units = "cm")
 }
 
 genomic_regions_dmr = function(annotations) {
@@ -115,9 +129,9 @@ genomic_regions_dmr = function(annotations) {
       theme_light() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1, size = 12), legend.title = element_text(size = 12), legend.text = element_text(size = 12)) + 
       scale_y_continuous(expand = expansion(mult = c(0, .1)))
 
-    ggsave(paste(name, "_DMR_regions.png"), width = 20, height = 15, units = "cm")
+    ggsave(paste(name, "_genomic_regions_DMR.png",sep = ""), width = 20, height = 15, units = "cm")
   }
 }
 
-#genomic_regions_meth(annotations())
+genomic_regions_meth(annotations())
 genomic_regions_dmr(annotations())
