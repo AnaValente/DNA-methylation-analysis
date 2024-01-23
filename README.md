@@ -27,12 +27,15 @@ conda activate methylation
 
 # Usage
 
-Mandatory inputs:
+**Mandatory inputs:**
  - `--files` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Path to scripts and samples folder
- - `--samples` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [String] sample names separated by comma (**always write the control name first!**)
+ - `--samples` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [String] sample names separated by comma **(always write the control name first!)**
  - `--replicates` &nbsp; [Integer] number of sample replicates
+ - `--genome` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Path to the hg38 reference genome file **(.fa.gz)** (available in: http://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz)
 
-Optional inputs:
+**Note: All samples and additional files must be placed in the scripts folder**
+
+**Optional inputs:**
 - `--concat ` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Option to concatenate BAM files from different runs
 - `--cell_tpm` &nbsp;&nbsp;&nbsp; Optional file containing two collumns, one with gene names and the other with expression levels in transcripts per million (TPM) for a cell line or cell type identical or similar to the cells under study (available in: https://www.ebi.ac.uk/gxa/experiments/E-MTAB-2770/Results) for gene name filtering
 - `--cutoff_regions` &nbsp;&nbsp; [Integer] cutoff (from 1 to 100) for the difference between samples methylation frequency vs control methylation frequency for genomic annotations (default: 75)
