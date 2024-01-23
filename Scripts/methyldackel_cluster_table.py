@@ -3,6 +3,7 @@
 import sys
 import glob
 import pandas as pd
+from statistics import mean
 
 def trim_bedgraph(cutoff):
 
@@ -29,21 +30,35 @@ def trim_bedgraph(cutoff):
 
     return merged_dataframe
 
-def merge_n_cutoff(df,samples,n_samples,control,cutoff):
+def merge_n_cutoff(df,n_replicates,samples,n_samples,control,cutoff):
 
     included = pd.DataFrame()
     filtered = pd.DataFrame()
 
-    samples_names = samples[-(int(n_samples)+4):-4]
+    samples_names = samples[-(int(n_samples)+5):-5]
 
     for i in range(len(df)):
         count = 0
 
         for j in samples_names:
-            if control+'rep2' in df.columns:
-                if (abs(int(df[j+'_rep1'].iloc[i]) - int(df[control+'_rep1'].iloc[i])) >= cutoff and abs(int(df[j+'_rep2'].iloc[i]) - int(df[control+'_rep1'].iloc[i])) >= cutoff and abs(int(df[j+'_rep1'].iloc[i]) - int(df[control+'_rep2'].iloc[i])) >= cutoff and abs(int(df[j+'_rep2'].iloc[i]) - int(df[control+'_rep2'].iloc[i])) >= cutoff):
+
+            diff_samples = list()
+            diff_control = list()
+
+            for r in range(1,n_replicates+1):
+                diff_samples.append(int(df[j + "_rep" + str(r)].iloc[i]))
+                diff_control.append(int(df[control + "_rep" + str(r)].iloc[i]))
+
+            if control+'_rep2' in df.columns:
+                if abs(mean(diff_samples) - mean(diff_control)) >= cutoff:
+
+                    print(j)
+                    print(diff_samples)
+                    print(diff_control)
+
                     included = pd.concat([included, df.iloc[[i]]])
                     count = count + 1
+                
             elif (abs(int(df[j+'_rep1'].iloc[i]) - int(df[control+'_rep1'].iloc[i])) >= cutoff and abs(int(df[j+'_rep2'].iloc[i]) - int(df[control+'_rep1'].iloc[i])) >= cutoff):
                 included = pd.concat([included, df.iloc[[i]]])
                 count = count + 1
@@ -56,16 +71,30 @@ def merge_n_cutoff(df,samples,n_samples,control,cutoff):
 
     return included,filtered
 
-def cutoff_genm_regions(df,samples,n_samples,control,cutoff):
+def cutoff_genm_regions(df,n_replicates,samples,n_samples,control,cutoff):
 
-    samples_names = samples[-(int(n_samples)+4):-4]
+    samples_names = samples[-(int(n_samples)+5):-5]
 
     for j in samples_names:
+        
         nanomaterial = pd.DataFrame()
 
         for i in range(len(df)):
-            if control+'rep2' in df.columns:
-                if (abs(int(df[j+'_rep1'].iloc[i]) - int(df[control+'_rep1'].iloc[i])) >= cutoff and (abs(int(df[j+'_rep2'].iloc[i]) - int(df[control+'_rep1'].iloc[i]))) >= cutoff and abs(int(df[j+'_rep1'].iloc[i]) - int(df[control+'_rep2'].iloc[i])) >= cutoff and (abs(int(df[j+'_rep2'].iloc[i]) - int(df[control+'_rep2'].iloc[i]))) >= cutoff):
+
+            diff_samples = list()
+            diff_control = list()
+
+            for r in range(1,n_replicates+1):
+                diff_samples.append(int(df[j+"_rep" + str(r)].iloc[i]))
+                diff_control.append(int(df[control+"_rep" + str(r)].iloc[i]))
+
+            if control+'_rep2' in df.columns:
+                if abs(mean(diff_samples) - mean(diff_control)) >= cutoff:
+
+                    print(j)
+                    print(diff_samples)
+                    print(diff_control)
+
                     nanomaterial = pd.concat([nanomaterial, df.iloc[[i]]])
                     nanomaterial.to_csv(j+'_methylation.csv', sep='\t', index=False, header=False)
 
@@ -73,16 +102,15 @@ def cutoff_genm_regions(df,samples,n_samples,control,cutoff):
                 nanomaterial = pd.concat([nanomaterial, df.iloc[[i]]])
                 nanomaterial.to_csv(j+'_methylation.csv', sep='\t', index=False, header=False)
 
-
 if __name__ == "__main__":
 
     correlation_df = trim_bedgraph(0)
     correlation_df.to_csv('correlation.csv', sep='\t', index=False)
 
-    included_df,unfiltered_df = merge_n_cutoff(trim_bedgraph(5),list(sys.argv),sys.argv[len(sys.argv)-4],sys.argv[len(sys.argv)-3],int(sys.argv[len(sys.argv)-2]))
-    nocluded_df,filtered_df = merge_n_cutoff(trim_bedgraph(5),list(sys.argv),sys.argv[len(sys.argv)-4],sys.argv[len(sys.argv)-3],int(sys.argv[len(sys.argv)-1]))
+    included_df,unfiltered_df = merge_n_cutoff(trim_bedgraph(5),int(sys.argv[len(sys.argv)-1]),list(sys.argv),sys.argv[len(sys.argv)-5],sys.argv[len(sys.argv)-4],int(sys.argv[len(sys.argv)-3]))
+    nocluded_df,filtered_df = merge_n_cutoff(trim_bedgraph(5),int(sys.argv[len(sys.argv)-1]),list(sys.argv),sys.argv[len(sys.argv)-5],sys.argv[len(sys.argv)-4],int(sys.argv[len(sys.argv)-2]))
 
     filtered_df.to_csv('diff_methylation_filtered.csv', sep='\t', index=False, header=True)
     included_df.to_csv('diff_methylation_all.csv', sep='\t', index=False, header=True)
 
-    cutoff_genm_regions(included_df,list(sys.argv), sys.argv[len(sys.argv)-4],sys.argv[len(sys.argv)-3],int(sys.argv[len(sys.argv)-2]))
+    cutoff_genm_regions(included_df,int(sys.argv[len(sys.argv)-1]),list(sys.argv),sys.argv[len(sys.argv)-5],sys.argv[len(sys.argv)-4],int(sys.argv[len(sys.argv)-3]))
