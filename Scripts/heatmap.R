@@ -14,8 +14,8 @@ heatmap = function(df, filename) {
   df = df[, 4:(ncol(df)-1)]
   
   # plot histogram
-  pdf(filename, width = 12, height = 12)
-  heatmap.2(as.matrix(df), srtCol = 360, adjCol = c(0.5, -0.7), cexCol = 0.8, margins = c(3, 7), hclustfun = hclust, trace = "none", col = colorpanel(100, "red3", "gray", "blue4"))
+  pdf(filename, width = 13, height = 12)
+  heatmap.2(as.matrix(df), srtCol = 360, adjCol = c(0.5, 0), cexCol = 0.86, cexRow = 0.7, margins = c(3, 12.5), hclustfun = hclust, trace = "none", col = colorpanel(100, "red3", "gray", "blue4"))
   dev.off()
 
 }
