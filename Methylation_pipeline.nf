@@ -151,7 +151,7 @@ process METILENE {
 process GENOMIC_REGIONS {
     // Genomic regions retrieval
 
-    publishDir './Pipeline_results/', mode: 'copy'
+    publishDir './Pipeline_results', mode: 'copy'
     
 	
     input:
@@ -191,7 +191,7 @@ process GENE_NAMES {
 process VENN_DIAGRAM {
     // Venn Diagram
 
-    publishDir './Pipeline_results/', mode: 'copy'
+    publishDir './Pipeline_results', mode: 'copy'
     
 	
     input:
@@ -239,6 +239,26 @@ process FINAL_REPORT {
 }
 
 workflow {
+    
+    if (!params.files) {
+        error("No input folder provided --files")
+    }
+
+    if (!params.samples) {
+        error("No sample names provided --samples")
+    }
+
+    if (!params.genome) {
+        error("No reference genome hg38 file provided --genome")
+    }
+
+    if (!params.replicates) {
+        error("No replicate number provided --replicates")
+    }
+    
+    if (params.cutoff_regions < 0 || params.cutoff_regions > 100 || params.cutoff_heatmap < 0 || params.cutoff_heatmap > 100) {
+        error("Please provide a cutoff number between 0 and 100")
+    }
 
     files = Channel.fromPath(params.files).collect()
     list_samples = params.samples.split(',') as List
