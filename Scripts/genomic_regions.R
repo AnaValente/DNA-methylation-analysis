@@ -32,7 +32,6 @@ genomic_regions_meth = function(annotations) {
   for (i in seq(1,length(annots_sum))) {
     name = sub("_.*", "", as.character(annotatr_files[[i]])) # remove unwanted characters from sample name
     name  = sub("./", "", name)
-    print(name)
 
     colnames(annots_sum[[i]]) = c("annot_type", name)
   }
@@ -111,7 +110,6 @@ genomic_regions_dmr = function(annotations) {
   hyper_annsum = lapply(hyper_annotation, function(i) {summarize_annotations(annotated_regions = i, quiet = TRUE)})
   hyper_col = lapply(hyper_annsum, setNames, c("Regions", "Nº of DMR"))
   hyper_col = lapply(hyper_col, change_anotation)
-
 
   for (i in seq(1,length(dmr_files))) {
     name = sub('./metilene_', "", as.character(dmr_files[[i]]))
