@@ -10,18 +10,19 @@ params.cutoff_regions = 75
 params.cutoff_heatmap = 100
 params.genome = false
 
-c_green = "\033[0;32m"
-c_blue = "\033[0;36m"
-c_red = "\033[0;31m"
-
+c_green = "\033[0;38;5;28m"
+c_yellow = "\033[0;38;5;226m"
+c_dark_blue = "\033[38;5;75m"
+c_orange = "\033[38;5;202m"
+c_blue = "\033[0;38;5;33m"
 c_reset = "\033[0m"
 
 log.info"""
-       ${c_blue}. ,-"-.   ,-"-. ,-"-.   ,-"-. ,-"-.   ,-"-. ,-"-.    ,-"-. ,-"-.   ,${c_reset}
-       ${c_blue} / | | \\ / | | / | | \\ / | | / | | \\ / | | / | | \\  / | | / | | \\ /${c_reset}
+       ${c_dark_blue}. ,-"-.   ,-"-. ,-"-.   ,-"-. ,-"-.   ,-"-. ,-"-.    ,-"-. ,-"-.   ,${c_reset}
+        ${c_dark_blue}/ ${c_green}| ${c_yellow}| ${c_dark_blue}\\ / ${c_orange}| ${c_blue}| ${c_dark_blue}/ ${c_blue}| ${c_green}| ${c_dark_blue}\\ / ${c_yellow}| ${c_blue}| ${c_dark_blue}/ ${c_yellow}| ${c_orange}| ${c_dark_blue}\\ / ${c_green}| ${c_blue}| ${c_dark_blue}/ ${c_orange}| ${c_blue}| ${c_dark_blue}\\  / ${c_yellow}| ${c_green}| ${c_dark_blue}/ ${c_orange}| ${c_blue}| ${c_dark_blue}\\ /${c_reset}
         D N A   M E T H Y L A T I O N   A N A L Y S I S   P I P E L I N E
-       ${c_blue}/ \\| | |\\| | |/ \\| | |\\| | |/ \\| | |\\| | |/ \\| | |\\|  | |/ \\| | |\\ ${c_reset}
-          ${c_blue}`-!-' `-!-'   `-!-' `-!-'   `-!-' `-!-'   `-!-'  `-!-'   `-!-' `-${c_reset}
+       ${c_dark_blue}/ \\${c_blue}| ${c_orange}| ${c_dark_blue}|\\| ${c_yellow}| ${c_green}|${c_dark_blue}/ \\${c_green}| ${c_blue}| ${c_dark_blue}|\\| ${c_orange}| ${c_green}|${c_dark_blue}/ \\${c_orange}| ${c_yellow}| ${c_dark_blue}|\\| ${c_blue}| ${c_green}|${c_dark_blue}/ \\${c_yellow}| ${c_green}| ${c_dark_blue}|\\|  ${c_orange}| ${c_blue}|${c_dark_blue}/ \\${c_yellow}| ${c_green}| ${c_dark_blue}|\\${c_reset}
+          ${c_dark_blue}`-!-' `-!-'   `-!-' `-!-'   `-!-' `-!-'   `-!-'  `-!-'   `-!-' `-${c_reset}
         """.stripIndent()
 
 process REFERENCE_GENOME_HG38 {
@@ -36,7 +37,6 @@ process REFERENCE_GENOME_HG38 {
     path "*"
 
     """
-
     gunzip -c ${genome} > hg38.fa
     """
 }
@@ -127,23 +127,25 @@ process METILENE {
 
     shell:
     '''
-    samples_rep="!{samples}_rep1_library_sorted_CpG.meth.bedGraph"
-    control_rep="!{control}_rep1_library_sorted_CpG.meth.bedGraph"
+    samples_rep=""
+    control_rep=""
 
-    for i in $(seq 2 !{n_replicates})
+    for i in $(seq 1 !{n_replicates})
     do
         samples_rep=${samples_rep}",!{samples}_rep${i}_library_sorted_CpG.meth.bedGraph"
         control_rep=${control_rep}",!{control}_rep${i}_library_sorted_CpG.meth.bedGraph"
     done
 
-    if [ -f !{control}_rep2*.bedGraph ]; then
-        metilene_input.pl --in1 ${samples_rep} --in2 ${control_rep}
-        metilene -a g1 -b g2 metilene_g1_g2.input | sort -V -k1,1 -k2,2n > metilene_!{samples}_!{control}.bedgraph
-        metilene_output.pl -q metilene_!{samples}_!{control}.bedgraph -o ./metilene_!{samples}_!{control}
-    else
+    if [ ! -f !{control}_rep2*.bedGraph]; then
         metilene_input.pl --in1 !{samples}_rep1_library_sorted_CpG.meth.bedGraph,!{samples}_rep2_library_sorted_CpG.meth.bedGraph --in2 !{control}_rep1_library_sorted_CpG.meth.bedGraph
         metilene -a g1 -b g2 metilene_g1_g2.input | sort -V -k1,1 -k2,2n > metilene_!{samples}_!{control}.bedgraph
         metilene_output.pl -q metilene_!{samples}_!{control}.bedgraph -o ./metilene_!{samples}_!{control}
+
+    else
+        metilene_input.pl --in1 ${samples_rep/,/} --in2 ${control_rep/,/}
+        metilene -a g1 -b g2 metilene_g1_g2.input | sort -V -k1,1 -k2,2n > metilene_!{samples}_!{control}.bedgraph
+        metilene_output.pl -q metilene_!{samples}_!{control}.bedgraph -o ./metilene_!{samples}_!{control}
+
     fi
     '''
 }
