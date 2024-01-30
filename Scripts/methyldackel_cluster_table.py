@@ -45,23 +45,18 @@ def merge_n_cutoff(df,n_replicates,samples,n_samples,control,cutoff):
             diff_samples = list()
             diff_control = list()
 
-            for r in range(1,n_replicates+1):
-                diff_samples.append(int(df[j + "_rep" + str(r)].iloc[i]))
-                diff_control.append(int(df[control + "_rep" + str(r)].iloc[i]))
-
-            if control+'_rep2' in df.columns:
-                if abs(mean(diff_samples) - mean(diff_control)) >= cutoff:
-
-                    print(j)
-                    print(diff_samples)
-                    print(diff_control)
-
+            if j+'_rep2' in df.columns and not control+'_rep2' in df.columns:
+                if (abs(int(df[j+'_rep1'].iloc[i]) - int(df[control+'_rep1'].iloc[i])) >= cutoff and abs(int(df[j+'_rep2'].iloc[i]) - int(df[control+'_rep1'].iloc[i])) >= cutoff):
                     included = pd.concat([included, df.iloc[[i]]])
                     count = count + 1
+            else:
+                for r in range(1,n_replicates+1):
+                    diff_samples.append(int(df[j + "_rep" + str(r)].iloc[i]))
+                    diff_control.append(int(df[control + "_rep" + str(r)].iloc[i]))
                 
-            elif (abs(int(df[j+'_rep1'].iloc[i]) - int(df[control+'_rep1'].iloc[i])) >= cutoff and abs(int(df[j+'_rep2'].iloc[i]) - int(df[control+'_rep1'].iloc[i])) >= cutoff):
-                included = pd.concat([included, df.iloc[[i]]])
-                count = count + 1
+                if abs(mean(diff_samples) - mean(diff_control)) >= cutoff:
+                    included = pd.concat([included, df.iloc[[i]]])
+                    count = count + 1
 
         if count == 1:
             filtered = pd.concat([filtered, df.iloc[[i]]])
@@ -84,23 +79,19 @@ def cutoff_genm_regions(df,n_replicates,samples,n_samples,control,cutoff):
             diff_samples = list()
             diff_control = list()
 
-            for r in range(1,n_replicates+1):
-                diff_samples.append(int(df[j+"_rep" + str(r)].iloc[i]))
-                diff_control.append(int(df[control+"_rep" + str(r)].iloc[i]))
-
-            if control+'_rep2' in df.columns:
-                if abs(mean(diff_samples) - mean(diff_control)) >= cutoff:
-
-                    print(j)
-                    print(diff_samples)
-                    print(diff_control)
-
+            if j+'_rep2' in df.columns and not control+'_rep2' in df.columns:
+                if (abs(int(df[j+'_rep1'].iloc[i]) - int(df[control+'_rep1'].iloc[i])) >= cutoff and abs(int(df[j+'_rep2'].iloc[i]) - int(df[control+'_rep1'].iloc[i])) >= cutoff):
                     nanomaterial = pd.concat([nanomaterial, df.iloc[[i]]])
-                    nanomaterial.to_csv(j+'_methylation.csv', sep='\t', index=False, header=False)
+            
+            else:
+                for r in range(1,n_replicates+1):
+                    diff_samples.append(int(df[j+"_rep" + str(r)].iloc[i]))
+                    diff_control.append(int(df[control+"_rep" + str(r)].iloc[i]))
 
-            elif (abs(int(df[j+'_rep1'].iloc[i]) - int(df[control+'_rep1'].iloc[i])) >= cutoff and (abs(int(df[j+'_rep2'].iloc[i]) - int(df[control+'_rep1'].iloc[i]))) >= cutoff):
-                nanomaterial = pd.concat([nanomaterial, df.iloc[[i]]])
-                nanomaterial.to_csv(j+'_methylation.csv', sep='\t', index=False, header=False)
+                if abs(mean(diff_samples) - mean(diff_control)) >= cutoff:
+                    nanomaterial = pd.concat([nanomaterial, df.iloc[[i]]])
+        
+        nanomaterial.to_csv(j+'_methylation.csv', sep='\t', index=False, header=False)
 
 if __name__ == "__main__":
 
