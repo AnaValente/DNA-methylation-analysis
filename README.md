@@ -45,22 +45,22 @@ conda activate methylation
 
 **Example**
 ```
-nextflow run Methylation_pipeline.nf --files /Scripts/* --samples 'Control','Sample1','Sample2' --replicates 2 --genome hg38.fa.gz
+nextflow run Methylation_pipeline.nf --files Scripts/* --samples 'Control','Sample1','Sample2' --replicates 2 --genome Scripts/hg38.fa.gz
 ```
 
 **Example with BAM concatenation**
 ```
-nextflow run Methylation_pipeline.nf --files /Scripts/* --samples 'Control','Sample1','Sample2' --replicates 2 --genome hg38.fa.gz --concat
+nextflow run Methylation_pipeline.nf --files Scripts/* --samples 'Control','Sample1','Sample2' --replicates 2 --genome Scripts/hg38.fa.gz --concat
 ```
 
 **Example with genes filtered by file**
 ```
-nextflow run Methylation_pipeline.nf --files /Scripts/* --samples 'Control','Sample1','Sample2' --replicates 2 --genome hg38.fa.gz --cell_tpm E-MTAB-2770-query-results.tsv 
+nextflow run Methylation_pipeline.nf --files Scripts/* --samples 'Control','Sample1','Sample2' --replicates 2 --genome Scripts/hg38.fa.gz --cell_tpm E-MTAB-2770-query-results.tsv 
 ```
 
 **Example with different cutoffs**
 ```
-nextflow run Methylation_pipeline.nf --files /Scripts/* --samples 'Control','Sample1','Sample2' --replicates 2 --genome hg38.fa.gz --cutoff_regions 50 --cutoff_heatmap 75
+nextflow run Methylation_pipeline.nf --files Scripts/* --samples 'Control','Sample1','Sample2' --replicates 2 --genome Scripts/hg38.fa.gz --cutoff_regions 50 --cutoff_heatmap 75
 ```
 
 
