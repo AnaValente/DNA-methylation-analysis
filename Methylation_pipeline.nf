@@ -220,6 +220,7 @@ process FINAL_REPORT {
     path metilene
     path correlation
     val cutoff_heatmap
+    val samples
 
     output:
     path "Final_report.txt"
@@ -228,7 +229,9 @@ process FINAL_REPORT {
     '''
     if [ -f *.bam ]; then
         echo -e "Concatenated BAMS:\\n=================" >> Final_report.txt
-        echo "zgrep -c '@' *bam" "reads" >> Final_report.txt
+        for bam in *.bam; do
+            samtools flagstat ${bam}
+        done
     fi
 
     echo -e "Methyldackel:\\n=============" >> Final_report.txt
@@ -237,7 +240,11 @@ process FINAL_REPORT {
     echo -e "$(wc -l correlation.csv | awk '{print $1-1}')" "CpG sites were used for the correlation matrix and PCA\\n" >> Final_report.txt
     echo -e "$(wc -l diff_methylation_filtered.csv | awk '{print $1-1}')" "CpG sites were used for the hierarchical clustering heatmap with a difference of !{cutoff_heatmap}% between the controls and samples\\n" >> Final_report.txt
     echo -e "\\nMetilene:\\n=========" >> Final_report.txt
-    wc -l metilene*_qval.0.05.bedgraph | sed 's/metilene_//' | sed 's/_qval.*//g' | awk '{print $2 ":", $1, "differentially methylated regions\\n"}' >> Final_report.txt
+    
+    for sample in !{samples}; do
+        echo -ne "$(wc -l metilene_${sample}*_qval.0.05.bedgraph | sed 's/metilene_//' | sed 's/_.*//g' | awk '{print $2 ":", $1, "differentially methylated regions,"}') where $(awk '$4 > 0 {print ;}' metilene_${sample}*_qval.0.05.bedgraph  | wc -l) are hypermetilated" >> Final_report.txt
+        echo -ne " and" "$(awk '$4 < 0 {print ;}' metilene_${sample}*_qval.0.05.bedgraph  | wc -l)" "are hypometilated\\n" >> Final_report.txt
+    done
     '''
 }
 
@@ -273,7 +280,7 @@ workflow {
     REFERENCE_GENOME_HG38(Channel.fromPath(params.genome))
     
     if (params.concat) {
-        CONCATENATE_BAMS(files, samples_chn,params.replicates)
+        CONCATENATE_BAMS(files, samples_chn, params.replicates)
         METHYLDACKEL(files, CONCATENATE_BAMS.out.collect(), REFERENCE_GENOME_HG38.out.collect(), samples_chn,params.replicates)
     }
     else {
@@ -290,9 +297,9 @@ workflow {
     }
 
     if (params.concat) {
-        FINAL_REPORT(CONCATENATE_BAMS.out.collect(), METHYLDACKEL.out.collect(), CORRELATION_AND_CLUSTERING.out.collect(), METILENE.out.collect(), params.cutoff_heatmap)
+        FINAL_REPORT(CONCATENATE_BAMS.out.collect(), METHYLDACKEL.out.collect(), CORRELATION_AND_CLUSTERING.out.collect(), METILENE.out.collect(), params.cutoff_heatmap, samples_names)
     }
     else {
-        FINAL_REPORT([], METHYLDACKEL.out.collect(), CORRELATION_AND_CLUSTERING.out.collect(), METILENE.out.collect(), params.cutoff_heatmap)
+        FINAL_REPORT([], METHYLDACKEL.out.collect(), CORRELATION_AND_CLUSTERING.out.collect(), METILENE.out.collect(), params.cutoff_heatmap, samples_names)
     }
 }
