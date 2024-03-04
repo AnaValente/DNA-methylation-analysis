@@ -14,7 +14,7 @@ heatmap = function(df, filename) {
   df = df[, 4:(ncol(df)-1)]
   
   # plot histogram
-  pdf(filename, width = 13, height = 12)
+  png(filename, width = 1900, height = 1800, res = 150)
   heatmap.2(as.matrix(df), srtCol = 360, adjCol = c(0.5, 0), cexCol = 0.86, cexRow = 0.7, margins = c(3, 12.5), hclustfun = hclust, trace = "none", col = colorpanel(100, "red3", "gray", "blue4"))
   dev.off()
 
@@ -22,4 +22,4 @@ heatmap = function(df, filename) {
 
 df_methylation = read.csv(args[1], sep = "\t")
 
-heatmap(df_methylation, "Methylation_heatmap.pdf")
+heatmap(df_methylation, "Methylation_heatmap.png")
