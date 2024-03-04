@@ -50,14 +50,16 @@ correlation = function(df, n_samples, n_replicates, control) {
   ggplot(scores, aes(PC1, PC2)) + geom_point(colour = colors, size = 2) +
     geom_text_repel(aes(label = rownames(scores)), size = 3) + 
     labs(x = sprintf("PC1 (%s%% of the variance explained)", round(summ$importance[2, 1], digits = 2) * 100), y = sprintf("PC2 (%s%% of the variance explained)", round(summ$importance[2, 2], digits = 2) * 100)) + 
-    theme_linedraw() + theme(axis.line = element_line(color = "black"), plot.background = element_blank(), panel.grid.minor = element_blank(), panel.grid.major = element_blank()) # plot of the PCA scores of PC1 and PC2
+    theme_linedraw() + theme(axis.line = element_line(color = "black"), plot.background = element_blank(), panel.grid.minor = element_blank(), panel.grid.major = element_blank()) +
+    xlim(min(scores$PC1)-0.01, max(scores$PC1)+0.01) # plot of the PCA scores of PC1 and PC2
   ggsave("PCA_analysis_PC1_PC2.png", width = 5, height = 4, dpi = 400)
 
   if (n_replicates > 1 & n_samples > 2){
     ggplot(scores, aes(PC2, PC3)) + geom_point(colour = colors, size = 2) +
       geom_text_repel(aes(label = rownames(scores)), size = 3) + 
       labs(x = sprintf("PC2 (%s%% of the variance explained)", round(summ$importance[2, 2], digits = 2) * 100), y=sprintf("PC3 (%s%% of the variance explained)", round(summ$importance[2, 3], digits = 2) * 100)) + 
-      theme_linedraw() + theme(axis.line = element_line(color = "black"), plot.background = element_blank(), panel.grid.minor = element_blank(), panel.grid.major = element_blank())# plot of the PCA scores of PC2 and PC3
+      theme_linedraw() + theme(axis.line = element_line(color = "black"), plot.background = element_blank(), panel.grid.minor = element_blank(), panel.grid.major = element_blank()) +
+      xlim(min(scores$PC2)-0.01, max(scores$PC3)+0.01) # plot of the PCA scores of PC2 and PC3
     ggsave("PCA_analysis_PC2_PC3.png", width = 5, height = 4, dpi = 400)
     }
   fviz_eig(pca, addlabels = TRUE, ylim = c(0, 100)) + theme_bw() + theme(plot.background = element_blank(), panel.grid.minor = element_blank(), panel.grid.major = element_blank()) + scale_y_continuous(expand = c(0, 0)) # scree plot
