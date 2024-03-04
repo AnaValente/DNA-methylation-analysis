@@ -5,10 +5,11 @@ import glob
 import pandas as pd
 from statistics import mean
 
-def trim_bedgraph(cutoff):
+def trim_bedgraph(cutoff,control):
 
     dataframes = []
     for file in glob.glob("*CpG.bedGraph"):
+
         bedgraph = pd.read_table(file,skiprows=1, header=None, sep='\t')
 
         bedgraph = bedgraph.rename(columns={0:'chr',1:'start',2:'end',3:file.split('_library', 1)[0],4:'methylated_reads',5:'unmethylated_reads'})
@@ -23,10 +24,13 @@ def trim_bedgraph(cutoff):
 
         merged_dataframe = dataframes[0]
 
-        for df in dataframes[1:]:
-            merged_dataframe = pd.merge(merged_dataframe, df, on=['chr','start','end'])
+    for df in dataframes[1:]:
+        merged_dataframe = pd.merge(merged_dataframe, df, on=['chr','start','end'])
 
-            merged_dataframe = pd.concat([merged_dataframe[['chr','start','end']],merged_dataframe[merged_dataframe.columns.difference(['chr','start','end'])].sort_index(axis=1)],ignore_index=False,axis=1)
+    control_cols = [col for col in merged_dataframe.columns if control in col]
+    first_cols = ['chr','start','end'] + control_cols
+
+    merged_dataframe = merged_dataframe.sort_values(by=first_cols)
 
     return merged_dataframe
 
@@ -95,11 +99,12 @@ def cutoff_genm_regions(df,n_replicates,samples,n_samples,control,cutoff):
 
 if __name__ == "__main__":
 
-    correlation_df = trim_bedgraph(0)
+    correlation_df = trim_bedgraph(0, sys.argv[len(sys.argv)-4])
     correlation_df.to_csv('correlation.csv', sep='\t', index=False)
 
-    included_df,unfiltered_df = merge_n_cutoff(trim_bedgraph(5),int(sys.argv[len(sys.argv)-1]),list(sys.argv),sys.argv[len(sys.argv)-5],sys.argv[len(sys.argv)-4],int(sys.argv[len(sys.argv)-3]))
-    nocluded_df,filtered_df = merge_n_cutoff(trim_bedgraph(5),int(sys.argv[len(sys.argv)-1]),list(sys.argv),sys.argv[len(sys.argv)-5],sys.argv[len(sys.argv)-4],int(sys.argv[len(sys.argv)-2]))
+    trim_bedgraph_5 = trim_bedgraph(5, sys.argv[len(sys.argv)-4])
+    included_df,unfiltered_df = merge_n_cutoff(trim_bedgraph_5,int(sys.argv[len(sys.argv)-1]),list(sys.argv),sys.argv[len(sys.argv)-5],sys.argv[len(sys.argv)-4],int(sys.argv[len(sys.argv)-3]))
+    nocluded_df,filtered_df = merge_n_cutoff(trim_bedgraph_5,int(sys.argv[len(sys.argv)-1]),list(sys.argv),sys.argv[len(sys.argv)-5],sys.argv[len(sys.argv)-4],int(sys.argv[len(sys.argv)-2]))
 
     filtered_df.to_csv('diff_methylation_filtered.csv', sep='\t', index=False, header=True)
     included_df.to_csv('diff_methylation_all.csv', sep='\t', index=False, header=True)
