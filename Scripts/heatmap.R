@@ -14,8 +14,8 @@ heatmap = function(df, filename) {
   df = df[, 4:(ncol(df)-1)]
   
   # plot histogram
-  reso <- 400
-  length <- 3.25*reso/72
+  reso = 400
+  length = 3.25*reso/72
   png(filename, units="in", res=reso, height=length, width=length)
   heatmap.2(as.matrix(df), srtCol = 360, adjCol = c(0.5, 0), cexRow = 0.8, margins = c(3, 12.5), hclustfun = hclust, trace = "none", col = colorpanel(100, "red3", "gray", "blue4"))
   dev.off()
