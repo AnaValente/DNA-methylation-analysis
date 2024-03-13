@@ -22,6 +22,6 @@ heatmap = function(df, filename) {
 
 }
 
-df_methylation = read.csv(args[1], sep = "\t")
+df_methylation = read.csv(args[1], sep = "\t", header = F)
 
 heatmap(df_methylation, "Methylation_heatmap.png")
