@@ -30,8 +30,8 @@ def trim_bedgraph(cutoff,control):
     control_cols = [col for col in merged_dataframe.columns if control in col]
     first_cols = ['chr','start','end'] + control_cols
 
-    merged_dataframe = merged_dataframe.sort_values(by=first_cols)
-
+    merged_dataframe = pd.concat([merged_dataframe[first_cols],merged_dataframe[merged_dataframe.columns.difference(first_cols)].sort_index(axis=1)],ignore_index=False,axis=1)
+    
     return merged_dataframe
 
 def merge_n_cutoff(df,n_replicates,samples,n_samples,control,cutoff):
