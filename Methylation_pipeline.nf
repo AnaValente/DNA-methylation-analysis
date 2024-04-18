@@ -52,17 +52,17 @@ process CONCATENATE_BAMS {
     val n_replicates
 
     output:
-    path "${samples}*_library_sorted.b*"
+    path "${samples}*_library_sorted.bam"
 
     shell:
     '''
-    for i in $(seq 1 !{n_replicates})
+    for n in $(seq 1 !{n_replicates})
     do
         if compgen -G "!{samples}_rep${n}*.bam" > /dev/null; then
             samtools merge !{samples}_rep${n}_library.bam !{samples}_rep${n}*.bam && samtools sort !{samples}_rep${n}_library.bam -o !{samples}_rep${n}_library_sorted.bam -O BAM && samtools index !{samples}_rep${n}_library_sorted.bam
         fi
     done
-   '''
+    '''
 }
 
 process METHYLDACKEL {
@@ -219,6 +219,7 @@ process FINAL_REPORT {
     path methyldackel
     path metilene
     path correlation
+    path genes
     val cutoff_heatmap
     val samples
 
@@ -227,10 +228,11 @@ process FINAL_REPORT {
 
     shell:
     '''
-    if [ -f *.bam ]; then
-        echo -e "Concatenated BAMS:\\n=================" >> Final_report.txt
-        for bam in *.bam; do
-            samtools flagstat ${bam}
+    if compgen -G "*.bam" > /dev/null; then
+        echo -e "Concatenated BAMS:\\n==================" >> Final_report.txt
+        for file in *.bam; do
+            echo -e "${file}:" >> Final_report.txt
+            samtools flagstat ${file} >> Final_report.txt
         done
     fi
 
@@ -244,6 +246,12 @@ process FINAL_REPORT {
     for sample in !{samples}; do
         echo -ne "$(wc -l metilene_${sample}*_qval.0.05.bedgraph | sed 's/metilene_//' | sed 's/_.*//g' | awk '{print $2 ":", $1, "differentially methylated regions,"}') where $(awk '$4 > 0 {print ;}' metilene_${sample}*_qval.0.05.bedgraph  | wc -l) are hypermetilated" >> Final_report.txt
         echo -ne " and" "$(awk '$4 < 0 {print ;}' metilene_${sample}*_qval.0.05.bedgraph  | wc -l)" "are hypometilated\\n" >> Final_report.txt
+    done
+
+    echo -e "\\nGenes:\\n======" >> Final_report.txt
+
+    for sample in !{samples}; do
+        wc -l ${sample}*.txt | sed 's/_.*//g' | awk '{print $2 ":", $1, "genes"}' >> Final_report.txt
     done
     '''
 }
@@ -281,7 +289,7 @@ workflow {
     
     if (params.concat) {
         CONCATENATE_BAMS(files, samples_chn, params.replicates)
-        METHYLDACKEL(files, CONCATENATE_BAMS.out.collect(), REFERENCE_GENOME_HG38.out.collect(), samples_chn,params.replicates)
+        METHYLDACKEL(files, CONCATENATE_BAMS.out.collect(), REFERENCE_GENOME_HG38.out.collect(), samples_chn, params.replicates)
     }
     else {
         METHYLDACKEL(files, [], REFERENCE_GENOME_HG38.out.collect(), samples_chn,params.replicates)
@@ -297,9 +305,9 @@ workflow {
     }
 
     if (params.concat) {
-        FINAL_REPORT(CONCATENATE_BAMS.out.collect(), METHYLDACKEL.out.collect(), CORRELATION_AND_CLUSTERING.out.collect(), METILENE.out.collect(), params.cutoff_heatmap, samples_names)
+        FINAL_REPORT(CONCATENATE_BAMS.out.collect(), METHYLDACKEL.out.collect(), CORRELATION_AND_CLUSTERING.out.collect(), METILENE.out.collect(), GENE_NAMES.out.collect(), params.cutoff_heatmap, samples_names)
     }
     else {
-        FINAL_REPORT([], METHYLDACKEL.out.collect(), CORRELATION_AND_CLUSTERING.out.collect(), METILENE.out.collect(), params.cutoff_heatmap, samples_names)
+        FINAL_REPORT([], METHYLDACKEL.out.collect(), CORRELATION_AND_CLUSTERING.out.collect(), METILENE.out.collect(), GENE_NAMES.out.collect(), params.cutoff_heatmap, samples_names)
     }
 }
