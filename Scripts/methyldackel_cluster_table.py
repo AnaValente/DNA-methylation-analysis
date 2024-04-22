@@ -35,7 +35,6 @@ def trim_bedgraph(cutoff,control):
     return merged_dataframe
 
 def merge_n_cutoff(df,n_replicates,samples,n_samples,control,cutoff):
-
     included = pd.DataFrame()
     filtered = pd.DataFrame()
 
@@ -103,8 +102,9 @@ if __name__ == "__main__":
     correlation_df.to_csv('correlation.csv', sep='\t', index=False)
 
     trim_bedgraph_5 = trim_bedgraph(5, sys.argv[len(sys.argv)-4])
+
     included_df,unfiltered_df = merge_n_cutoff(trim_bedgraph_5,int(sys.argv[len(sys.argv)-1]),list(sys.argv),sys.argv[len(sys.argv)-5],sys.argv[len(sys.argv)-4],int(sys.argv[len(sys.argv)-3]))
-    nocluded_df,filtered_df = merge_n_cutoff(trim_bedgraph_5,int(sys.argv[len(sys.argv)-1]),list(sys.argv),sys.argv[len(sys.argv)-5],sys.argv[len(sys.argv)-4],int(sys.argv[len(sys.argv)-2]))
+    removed_df,filtered_df = merge_n_cutoff(trim_bedgraph_5,int(sys.argv[len(sys.argv)-1]),list(sys.argv),sys.argv[len(sys.argv)-5],sys.argv[len(sys.argv)-4],int(sys.argv[len(sys.argv)-2]))
 
     filtered_df.to_csv('diff_methylation_filtered.csv', sep='\t', index=False, header=True)
     included_df.to_csv('diff_methylation_all.csv', sep='\t', index=False, header=True)
