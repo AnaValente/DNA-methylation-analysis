@@ -52,7 +52,7 @@ process CONCATENATE_BAMS {
     val n_replicates
 
     output:
-    path "${samples}*_library_sorted.bam"
+    path "${samples}*_library_sorted.b*"
 
     shell:
     '''
