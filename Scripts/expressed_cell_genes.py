@@ -9,7 +9,7 @@ def cell_common_genes(df, tpm, tpm5):
     """
     Find common genes based on methylation difference and TPM values.
 
-    Parameters:
+    Args:
         df (DataFrame): DataFrame containing gene data.
         tpm (DataFrame): DataFrame containing TPM values with column 'Gene ID'.
         tpm5 (DataFrame): DataFrame containing TPM values with column 'Gene ID', filtered to include genes with TPM >= 5.
