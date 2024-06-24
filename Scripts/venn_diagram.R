@@ -2,12 +2,12 @@
 
 # libraries
 library("ggVennDiagram")
-library(RColorBrewer)
-library(ggplot2)
+library("RColorBrewer")
+library("ggplot2")
 
-args = commandArgs(trailingOnly = TRUE)
+args <- commandArgs(trailingOnly = TRUE)
 
-diagram = function() {
+diagram <- function() {
 
   # List all files with *.txt prefix
   gene_files = list.files(pattern = "*.txt", full.names = TRUE)
@@ -20,10 +20,12 @@ diagram = function() {
   sample_names = lapply(sample_names, function(i) {sub("./", "", as.character(i))})
 
   # Plot veen diagram
-  diagram = ggVennDiagram(genes_matrix, label = "count", label_alpha = 0, label_size = 6, set_size = 6, category.names = sample_names, edge_size = 0) +
-    scale_fill_gradient(low = "#F4FAFE", high = "#3f648e") + scale_x_continuous(expand = expansion(mult = .2))
+  veen = ggVennDiagram(genes_matrix, label = "count", label_alpha = 0, label_size = 6, set_size = 6,category.names = sample_names, edge_size = 0) +
+    scale_fill_gradient(low = "#F4FAFE", high = "#3f648e") +
+    scale_x_continuous(expand = expansion(mult = .2))
 
-  ggsave("venn_diagram.png", diagram, scale = 2, width = 15, height = 10, dpi = 400, units = c("cm"), bg = "White")
+  ggsave("venn_diagram.png", veen, scale = 2, width = 15, height = 10, dpi = 400, units = c("cm"), bg = "White")
+
 }
 
 diagram()
