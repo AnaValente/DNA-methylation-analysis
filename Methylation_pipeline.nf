@@ -80,6 +80,8 @@ process METHYLDACKEL {
     output:
     path "*.bedGraph"
 
+    publishDir './Pipeline_results/Methyldackel', pattern:"*svg" , mode: 'copy'
+
     """
     ./methyldackel.sh ${n_replicates} ${samples}
     """
@@ -103,6 +105,7 @@ process CORRELATION_AND_CLUSTERING {
 
     publishDir './Pipeline_results', pattern:"*png" , mode: 'copy'
     publishDir './Pipeline_results', pattern:"*pdf" , mode: 'copy'
+    publishDir './Pipeline_results/Methyldackel', pattern:"*bedGraph" , mode: 'copy'
 
     """
 	python3 methyldackel_cluster_table.py ${bedgraphs} ${samples} ${number_samples} ${control} ${cutoff_regions} ${cutoff_heatmap} ${n_replicates} && ./correlation_analysis.R correlation.csv ${number_samples} ${n_replicates} ${control} && ./heatmap.R diff_methylation_filtered.csv 
@@ -130,8 +133,8 @@ process METILENE {
     samples_rep=""
     control_rep=""
 
-    if  [[ ! -f !{control}_rep2_library_sorted_CpG.meth.bedGraph ]] && [[ -f !{samples}_rep2_library_sorted_CpG.meth.bedGraph ]]; then
-        metilene_input.pl --in1 !{samples}_rep1_library_sorted_CpG.meth.bedGraph,!{samples}_rep2_library_sorted_CpG.meth.bedGraph --in2 !{control}_rep1_library_sorted_CpG.meth.bedGraph
+    if  [[ ! -f !{control}_rep2_CpGs.bedGraph ]] && [[ -f !{samples}_rep2_CpGs.bedGraph ]]; then
+        metilene_input.pl --in1 !{samples}_rep1_CpGs.bedGraph,!{samples}_rep2_CpGs.bedGraph --in2 !{control}_rep1_CpGs.bedGraph
         metilene -a g1 -b g2 metilene_g1_g2.input | sort -V -k1,1 -k2,2n > metilene_!{samples}_!{control}.bedgraph
         metilene_output.pl -q metilene_!{samples}_!{control}.bedgraph -o ./metilene_!{samples}_!{control}
 
@@ -139,8 +142,8 @@ process METILENE {
 
         for i in $(seq 1 !{n_replicates})
         do
-            samples_rep=${samples_rep}",!{samples}_rep${i}_library_sorted_CpG.meth.bedGraph"
-            control_rep=${control_rep}",!{control}_rep${i}_library_sorted_CpG.meth.bedGraph"
+            samples_rep=${samples_rep}",!{samples}_rep${i}_CpGs.bedGraph"
+            control_rep=${control_rep}",!{control}_rep${i}_CpGs.bedGraph"
         done
 
         metilene_input.pl --in1 ${samples_rep/,/} --in2 ${control_rep/,/}
@@ -203,7 +206,7 @@ process VENN_DIAGRAM {
 
 
     output:
-    path "*"
+    path "*.png"
 
     """
 	./venn_diagram.R
@@ -237,7 +240,7 @@ process FINAL_REPORT {
     fi
 
     echo -e "Methyldackel:\\n=============" >> Final_report.txt
-    wc -l *meth.bedGraph | sed 's/_library.*//g' | awk '{print $2 ":", $1-1, "CpG sites\\n"}' >> Final_report.txt
+    wc -l *_library_sorted_CpG.bedGraph | sed 's/_library.*//g' | awk '{print $2 ":", $1-1, "CpG sites\\n"}' >> Final_report.txt
     echo -e "\\nCorrelation and clustering:\\n===========================" >> Final_report.txt
     echo -e "$(wc -l correlation.csv | awk '{print $1-1}')" "CpG sites were used for the correlation matrix and PCA\\n" >> Final_report.txt
     echo -e "$(wc -l diff_methylation_filtered.csv | awk '{print $1-1}')" "CpG sites were used for the hierarchical clustering heatmap with a difference of !{cutoff_heatmap}% between the controls and samples\\n" >> Final_report.txt
@@ -296,7 +299,7 @@ workflow {
     }
 
     CORRELATION_AND_CLUSTERING(files, METHYLDACKEL.out.collect(), samples_names, list_samples.size(), control, params.cutoff_regions, params.cutoff_heatmap, params.replicates)
-    METILENE(files, METHYLDACKEL.out.collect(), control, samples_chn2, params.replicates)
+    METILENE(files, CORRELATION_AND_CLUSTERING.out.collect(), control, samples_chn2, params.replicates)
     GENOMIC_REGIONS(files, CORRELATION_AND_CLUSTERING.out.collect(), METILENE.out.collect())
     GENE_NAMES(files, METILENE.out.collect(), control, samples_chn2, params.cell_tpm)
 
