@@ -43,6 +43,12 @@ def trim_bedgraph(cutoff, control):
 
     merged_dataframe = pd.concat([merged_dataframe[first_cols], merged_dataframe[merged_dataframe.columns.difference(first_cols)].sort_index(axis=1)], ignore_index=False, axis=1)
     
+    merged_dataframe = merged_dataframe[merged_dataframe.columns.drop(list(merged_dataframe.filter(regex='sum_reads')))]
+
+    merged_dataframe2 = merged_dataframe.iloc[:, 3::]
+    for col in merged_dataframe2.columns:
+        merged_dataframe[['chr','start','end', col]].to_csv(col + '_CpGs.bedGraph', sep='\t', index=False, header = False)
+    
     return merged_dataframe
 
 def comp_meth_frequencies(df, n_replicates, sample_list, control, cutoff, filter = False):
@@ -113,14 +119,11 @@ def cutoff_genm_regions(df, n_replicates, samples, n_samples, control, cutoff):
 
 if __name__ == "__main__":
     # Merge bedGraph files and store in a file for the correlation analysis
-    correlation_df = trim_bedgraph(0, sys.argv[len(sys.argv)-4])
+    correlation_df = trim_bedgraph(3, sys.argv[len(sys.argv)-4])
     correlation_df.to_csv('correlation.csv', sep='\t', index=False)
 
-    # Trim bedGraph files with a cutoff of 5
-    trim_bedgraph_5 = trim_bedgraph(5, sys.argv[len(sys.argv)-4])
-
-    included_df, unfiltered_df = cutoff_heatmap(trim_bedgraph_5, int(sys.argv[len(sys.argv)-1]), list(sys.argv), sys.argv[len(sys.argv)-5], sys.argv[len(sys.argv)-4], int(sys.argv[len(sys.argv)-3]))
-    removed_df, filtered_df = cutoff_heatmap(trim_bedgraph_5, int(sys.argv[len(sys.argv)-1]), list(sys.argv), sys.argv[len(sys.argv)-5], sys.argv[len(sys.argv)-4], int(sys.argv[len(sys.argv)-2]))
+    included_df, unfiltered_df = cutoff_heatmap(correlation_df, int(sys.argv[len(sys.argv)-1]), list(sys.argv), sys.argv[len(sys.argv)-5], sys.argv[len(sys.argv)-4], int(sys.argv[len(sys.argv)-3]))
+    removed_df, filtered_df = cutoff_heatmap(correlation_df, int(sys.argv[len(sys.argv)-1]), list(sys.argv), sys.argv[len(sys.argv)-5], sys.argv[len(sys.argv)-4], int(sys.argv[len(sys.argv)-2]))
 
     # Save filtered and included regions to files
     filtered_df.to_csv('diff_methylation_filtered.csv', sep='\t', index=False, header=True)
