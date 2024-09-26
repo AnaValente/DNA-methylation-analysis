@@ -25,7 +25,7 @@ def cell_common_genes(df, tpm, tpm5):
             else:
                 excluded_genes = pd.concat([excluded_genes, df.iloc[[i]]]) 
 
-    return common_genes.reset_index(drop=True) 
+    return common_genes.reset_index(drop=True), excluded_genes.reset_index(drop=True)
 
 
 if __name__ == "__main__":
@@ -40,8 +40,9 @@ if __name__ == "__main__":
         cell_tpm5 = cell_tpm[cell_tpm.iloc[:, 1] >= 5.0]  # Select genes with TPM >= 5
 
         ctrl_NM_genes = pd.read_csv(sys.argv[2]+'_'+sys.argv[1]+'_refseq.bedgraph', sep='\t', header=None, names=['chr','start','end','mean_methylation_dif','Gene Name','dist'])
-        common_genes_NM = cell_common_genes(ctrl_NM_genes, cell_tpm, cell_tpm5)
+        common_genes_NM,expressed = cell_common_genes(ctrl_NM_genes, cell_tpm, cell_tpm5)
 
+        expressed.to_csv(sys.argv[2]+'_'+sys.argv[1]+'_merged_genes_excluded.bedgraph', index=False, header=False, sep='\t')
         common_genes_NM.to_csv(sys.argv[2]+'_'+sys.argv[1]+'_merged_genes.bedgraph', index=False, header=False, sep='\t')
         common_genes_NM['Gene Name'].to_csv(sys.argv[2]+'_'+sys.argv[1]+'_merged_genes.txt', index=False, header=False, sep='\t')
     else:
