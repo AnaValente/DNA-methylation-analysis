@@ -8,51 +8,71 @@ library("ggrepel")
 library("scales")
 library("gtools")
 library("data.table")
-library("methylKit")
 library("scales")
 
 args <- commandArgs(trailingOnly = TRUE)
 
 table_trimming <- function(df, n_samples, n_replicates) {
 
-  df2 <- data.frame(test = rnorm(nrow(df)))
-  print(head(df2))
+  var_df <- data.frame(random = runif(nrow(df)))
 
-  vect <- seq(4,(as.numeric(n_samples) * as.numeric(n_replicates) + 5))
+  # Get sequence with column numbers
+  vect <- seq(4, ((as.numeric(n_samples) + 1) * as.numeric(n_replicates) + 3))
   fst <- 1
   lst <- as.numeric(n_replicates)
 
-  for (sample in 1:(as.numeric(n_samples) + 1)) {
-    print(vect[fst:lst])
-    mean_rep <- rowMeans(df[, vect[fst:lst]])
-    df2[,paste0('sample',sample)] <- mean_rep
-    fst <- fst + as.numeric(n_replicates)
-    lst <- lst + as.numeric(n_replicates)
+  if (fst == lst) {
+    lst <- lst + 1
   }
 
-  df2 <- df2[-1]
+  if ((ncol(df[, -c(1,2,3)]) %% as.numeric(n_replicates)) != 0) {
+    fst <- 2
+    lst <- as.numeric(n_replicates) + 1
+    var_df[, paste0("sample", 1)] <- df[, 4]
 
-  print(head(df2))
+    for (sample in 2:(as.numeric(n_samples) + 1)) {
+      mean_rep <- rowMeans(df[, vect[fst:lst]]) # Row mean of column replicates
+      var_df[, paste0("sample", sample)] <- mean_rep # Add mean of replicate to the variance dataframe
+      fst <- fst + as.numeric(n_replicates)
+      lst <- lst + as.numeric(n_replicates)
+    }
+  } else {
 
-  matx <- data.matrix(df2, rownames.force = NA)
+    if (as.numeric(n_replicates) == 1) {
+      mean_rep <- rowMeans(df[, vect[fst:lst]])
+      var_df[, paste0("sample")] <- mean_rep
 
-  variance <- apply(matx, 1, var)
+    } else {
 
-  df2[, "var"] <- variance
+      for (sample in 1:(as.numeric(n_samples) + 1)) {
+        mean_rep <- rowMeans(df[, vect[fst:lst]])
+        var_df[, paste0("sample", sample)] <- mean_rep
+        fst <- fst + as.numeric(n_replicates)
+        lst <- lst + as.numeric(n_replicates)
+      }
+    }
+  }
 
-  df2 <- df2[order(df2$var, decreasing = TRUE), ]
+  var_df <- var_df[-1]
 
-  test <- rownames(df2[0:(nrow(df2) * 0.1), ])
+  data_matx <- data.matrix(var_df, rownames.force = NA)
 
-  df <- df[as.numeric(test), ]
-  print(head(df))
+  variance <- apply(data_matx, 1, var) # Calculate variance
+
+  var_df[, "var"] <- variance
+
+  var_df <- var_df[order(var_df$var, decreasing = TRUE), ]
+
+  var_names <- rownames(var_df[0:(nrow(var_df) * 0.1), ]) # Row names of the 10% most variable CpGs
+
+  df <- df[as.numeric(var_names), ] # Select the 10% most variable CpGs
 
   return(df)
 }
 
 correlation <- function(df) {
 
-  df <- df[, 4:(ncol(df)-1)] # Remove string columns
+  df <- df[, 4:(ncol(df))] # Remove string columns
 
   png("correlation_analysis.png", width = 1500, height = 1400, res = 180)
   corrgram(df, upper.panel = panel.cor) # Correlation matrix
