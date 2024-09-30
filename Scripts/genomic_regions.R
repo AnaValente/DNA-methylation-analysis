@@ -6,14 +6,17 @@ library(rtracklayer)
 library(TxDb.Hsapiens.UCSC.hg38.knownGene)
 library(forcats)
 library(reshape2)
+library(dplyr)
+library(tidyr)
 
 annotations <- function() {
 
   annots <- c("hg38_cpgs", "hg38_genes_1to5kb", "hg38_genes_promoters",
-             "hg38_genes_cds", "hg38_genes_5UTRs", "hg38_genes_exons",
-             "hg38_genes_firstexons", "hg38_genes_introns",
-             "hg38_genes_intronexonboundaries", "hg38_genes_exonintronboundaries",
-             "hg38_genes_3UTRs", "hg38_genes_intergenic", "hg38_basicgenes")
+              "hg38_genes_cds", "hg38_genes_5UTRs", "hg38_genes_exons",
+              "hg38_genes_firstexons", "hg38_genes_introns",
+              "hg38_genes_intronexonboundaries",
+              "hg38_genes_exonintronboundaries",
+              "hg38_genes_3UTRs", "hg38_genes_intergenic", "hg38_basicgenes")
 
   # Build annotations for hg38 reference genome
   annotations <- build_annotations(genome = "hg38", annotations = annots)
@@ -23,12 +26,18 @@ annotations <- function() {
 
 change_annotation <- function(df) {
   # Replace annotations names for new annotation names
-  annots_types_old <- c("hg38_cpg_islands", "hg38_genes_1to5kb", "hg38_genes_3UTRs", "hg38_genes_5UTRs", "hg38_genes_cds",
-    "hg38_genes_exonintronboundaries", "hg38_genes_exons", "hg38_genes_firstexons", "hg38_genes_intergenic",
-    "hg38_genes_intronexonboundaries", "hg38_genes_introns", "hg38_genes_promoters")
+  annots_types_old <- c("hg38_cpg_islands", "hg38_genes_1to5kb",
+                        "hg38_genes_3UTRs", "hg38_genes_5UTRs",
+                        "hg38_genes_cds", "hg38_genes_exonintronboundaries",
+                        "hg38_genes_exons", "hg38_genes_firstexons",
+                        "hg38_genes_intergenic",
+                        "hg38_genes_intronexonboundaries",
+                        "hg38_genes_introns", "hg38_genes_promoters")
 
-  annots_types_new <- c("CpG islands", "1to5kb", "3UTRs", "5UTRs", "cds", "exon/intron boundaries", "exons", "first exons",
-    "intergenic", "intron/exon boundaries", "introns", "promoters")
+  annots_types_new <- c("CpG islands", "1to5kb", "3UTRs",
+                        "5UTRs", "cds", "exon/intron boundaries",
+                        "exons", "first exons", "intergenic",
+                        "intron/exon boundaries", "introns", "promoters")
 
   for (n in seq(1, nrow(df))) {
     for (j in 1:12) {
@@ -70,6 +79,7 @@ genomic_regions_meth <- function(annotations) {
   df_list <- change_annotation(df_list)
 
   df_list <- as.data.frame(df_list)
+  df_list <- na.omit(df_list)
   row.names(df_list) <- df_list$Regions
   df_list <- df_list[, 2:ncol(df_list), drop = FALSE] # Remove annotation names
 
@@ -92,6 +102,14 @@ genomic_regions_meth <- function(annotations) {
 
 genomic_regions_dmr <- function(annotations) {
 
+  ids <- c("hg38_cpg_islands", "hg38_genes_1to5kb",
+           "hg38_genes_3UTRs", "hg38_genes_5UTRs",
+           "hg38_genes_cds", "hg38_genes_exonintronboundaries",
+           "hg38_genes_exons", "hg38_genes_firstexons",
+           "hg38_genes_intergenic",
+           "hg38_genes_intronexonboundaries",
+           "hg38_genes_introns", "hg38_genes_promoters")
+
   # List all files with *0.05.bedgraph prefix
   dmr_files <- list.files(pattern = "*0.05.bedgraph", full.names = TRUE)
 
@@ -113,12 +131,15 @@ genomic_regions_dmr <- function(annotations) {
   # Summarize hypomethylated annotations
   hypo_annsum <- lapply(hypo_annotation, function(i) {summarize_annotations(annotated_regions = i, quiet = TRUE)})
   hypo_col <- lapply(hypo_annsum, setNames, c("Regions", "Nº of DMR"))
+  hypo_col <- lapply(hypo_col, function(i) {i %>% complete(Regions = ids, fill = list(`Nº of DMR` = 0))})
   hypo_col <- lapply(hypo_col, change_annotation)
 
   # Summarize hypermethylated annotations
   hyper_annsum <- lapply(hyper_annotation, function(i) {summarize_annotations(annotated_regions = i, quiet = TRUE)})
   hyper_col <- lapply(hyper_annsum, setNames, c("Regions", "Nº of DMR"))
+  hyper_col <- lapply(hyper_col, function(i) {i %>% complete(Regions = ids, fill = list(`Nº of DMR` = 0))})
   hyper_col <- lapply(hyper_col, change_annotation)
+  
 
   for (i in seq(1, length(dmr_files))) {
     name <- sub("./metilene_", "", as.character(dmr_files[[i]]))
