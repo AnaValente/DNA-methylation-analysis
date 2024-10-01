@@ -9,23 +9,24 @@ params.cell_tpm = false
 params.cutoff_regions = 75
 params.cutoff_heatmap = 100
 params.genome = false
+params.refseq_genes = false
 
 c_green = "\033[0;38;5;28m"
-c_yellow = "\033[0;38;5;226m"
-c_dark_blue = "\033[38;5;75m"
+c_yellow = "\033[0;38;5;142m"
+c_white = "\033[38;5;251m"
 c_orange = "\033[38;5;202m"
 c_blue = "\033[0;38;5;33m"
 c_reset = "\033[0m"
 
 log.info"""
-       ${c_dark_blue}. ,-"-.   ,-"-. ,-"-.   ,-"-. ,-"-.   ,-"-. ,-"-.    ,-"-. ,-"-.   ,${c_reset}
-        ${c_dark_blue}/ ${c_green}| ${c_yellow}| ${c_dark_blue}\\ / ${c_orange}| ${c_blue}| ${c_dark_blue}/ ${c_blue}| ${c_green}| ${c_dark_blue}\\ / ${c_yellow}| ${c_blue}| ${c_dark_blue}/ ${c_yellow}| ${c_orange}| ${c_dark_blue}\\ / ${c_green}| ${c_blue}| ${c_dark_blue}/ ${c_orange}| ${c_blue}| ${c_dark_blue}\\  / ${c_yellow}| ${c_green}| ${c_dark_blue}/ ${c_orange}| ${c_blue}| ${c_dark_blue}\\ /${c_reset}
-        D N A   M E T H Y L A T I O N   A N A L Y S I S   P I P E L I N E
-       ${c_dark_blue}/ \\${c_blue}| ${c_orange}| ${c_dark_blue}|\\| ${c_yellow}| ${c_green}|${c_dark_blue}/ \\${c_green}| ${c_blue}| ${c_dark_blue}|\\| ${c_orange}| ${c_green}|${c_dark_blue}/ \\${c_orange}| ${c_yellow}| ${c_dark_blue}|\\| ${c_blue}| ${c_green}|${c_dark_blue}/ \\${c_yellow}| ${c_green}| ${c_dark_blue}|\\|  ${c_orange}| ${c_blue}|${c_dark_blue}/ \\${c_yellow}| ${c_green}| ${c_dark_blue}|\\${c_reset}
-          ${c_dark_blue}`-!-' `-!-'   `-!-' `-!-'   `-!-' `-!-'   `-!-'  `-!-'   `-!-' `-${c_reset}
+        . ,-"-.   ,-"-. ,-"-.   ,-"-. ,-"-.   ,-"-. ,-"-.    ,-"-. ,-"-.   ,
+         / ${c_green}| ${c_yellow}| ${c_reset}\\ / ${c_orange}| ${c_blue}| ${c_reset}/ ${c_blue}| ${c_green}| ${c_reset}\\ / ${c_yellow}| ${c_blue}| ${c_reset}/ ${c_yellow}| ${c_orange}| ${c_reset}\\ / ${c_green}| ${c_blue}| ${c_reset}/ ${c_orange}| ${c_blue}| ${c_reset}\\  / ${c_yellow}| ${c_green}| ${c_reset}/ ${c_orange}| ${c_blue}| ${c_reset}\\ /${c_reset}
+         D N A   M E T H Y L A T I O N   A N A L Y S I S   P I P E L I N E
+        / \\${c_blue}| ${c_orange}| ${c_reset}|\\| ${c_yellow}| ${c_green}|${c_reset}/ \\${c_green}| ${c_blue}| ${c_reset}|\\| ${c_orange}| ${c_green}|${c_reset}/ \\${c_orange}| ${c_yellow}| ${c_reset}|\\| ${c_blue}| ${c_green}|${c_reset}/ \\${c_yellow}| ${c_green}| ${c_reset}|\\|  ${c_orange}| ${c_blue}|${c_reset}/ \\${c_yellow}| ${c_green}| ${c_reset}|\\${c_reset}
+           `-!-' `-!-'   `-!-' `-!-'   `-!-' `-!-'   `-!-'  `-!-'   `-!-' `-
         """.stripIndent()
 
-process REFERENCE_GENOME_HG38 {
+process REFERENCE_GENOME {
     // Download fasta file of the reference genome 
     
     publishDir "./Pipeline_results/Methyldackel", mode: "copy"
@@ -37,7 +38,7 @@ process REFERENCE_GENOME_HG38 {
     path "*"
 
     """
-    gunzip -c ${genome} > hg38.fa
+    gunzip -c ${genome} > genome.fa
     """
 }
 
@@ -73,7 +74,7 @@ process METHYLDACKEL {
     input:
     path folder
     path bam_rep1
-    path hg38
+    path genome
     val samples
     val n_replicates
 
@@ -105,7 +106,7 @@ process CORRELATION_AND_CLUSTERING {
 
     publishDir './Pipeline_results', pattern:"*png" , mode: 'copy'
     publishDir './Pipeline_results', pattern:"*pdf" , mode: 'copy'
-    publishDir './Pipeline_results/Methyldackel', pattern:"*bedGraph" , mode: 'copy'
+    publishDir './Pipeline_results', pattern:"*csv" , mode: 'copy'
 
     """
 	python3 methyldackel_cluster_table.py ${bedgraphs} ${samples} ${number_samples} ${control} ${cutoff_regions} ${cutoff_heatmap} ${n_replicates} && ./correlation_analysis.R correlation.csv ${number_samples} ${n_replicates} ${control} && ./heatmap.R diff_methylation_filtered.csv 
@@ -120,7 +121,7 @@ process METILENE {
 	
     input:
     path folder
-    path bedgraphs
+    path bedgraph
     val control
     val samples
     val n_replicates
@@ -135,7 +136,7 @@ process METILENE {
 
     if  [[ ! -f !{control}_rep2_CpGs.bedGraph ]] && [[ -f !{samples}_rep2_CpGs.bedGraph ]]; then
         metilene_input.pl --in1 !{samples}_rep1_CpGs.bedGraph,!{samples}_rep2_CpGs.bedGraph --in2 !{control}_rep1_CpGs.bedGraph
-        metilene -a g1 -b g2 metilene_g1_g2.input | sort -V -k1,1 -k2,2n > metilene_!{samples}_!{control}.bedgraph
+        metilene -a g1 -b g2 metilene_g1_g2.input | sort -V -k1,1 -k2,2n > metilene_!{samples}_!{control}.bedgraph 
         metilene_output.pl -q metilene_!{samples}_!{control}.bedgraph -o ./metilene_!{samples}_!{control}
 
     else
@@ -147,7 +148,7 @@ process METILENE {
         done
 
         metilene_input.pl --in1 ${samples_rep/,/} --in2 ${control_rep/,/}
-        metilene -a g1 -b g2 metilene_g1_g2.input | sort -V -k1,1 -k2,2n > metilene_!{samples}_!{control}.bedgraph
+        metilene -a g1 -b g2 metilene_g1_g2.input | sort -V -k1,1 -k2,2n > metilene_!{samples}_!{control}.bedgraph 
         metilene_output.pl -q metilene_!{samples}_!{control}.bedgraph -o ./metilene_!{samples}_!{control}
 
     fi
@@ -181,16 +182,18 @@ process GENE_NAMES {
 	
     input:
     path folder
-    path bedgraphs
+    path bedgraph
     val control
     val samples
     val cell_tpm
+    val refseq_genes
+    
 
     output:
     path "*_merged_genes*.*"
 
     """
-	./get_refseq_gene_names.sh metilene_${samples}_${control}_qval.0.05.bedgraph ${samples}_${control} && python3 expressed_cell_genes.py ${control} ${samples} ${cell_tpm}
+	./get_refseq_gene_names.sh metilene_${samples}_${control}_qval.0.05.bedgraph ${refseq_genes} ${samples}_${control} && python3 expressed_cell_genes.py ${control} ${samples} ${cell_tpm}
     """
 }
 
@@ -270,11 +273,15 @@ workflow {
     }
 
     if (!params.genome) {
-        error("No reference genome hg38 file provided --genome")
+        error("No reference genome file provided --genome")
     }
 
     if (!params.replicates) {
-        error("No replicate number provided --replicates")
+        error("No replicate number provided, if there are no replicates input 1 --replicates")
+    }
+    
+    if (!params.refseq_genes) {
+        error("No RefSeq file provided --refseq_genes")
     }
     
     if (params.cutoff_regions < 0 || params.cutoff_regions > 100 || params.cutoff_heatmap < 0 || params.cutoff_heatmap > 100) {
@@ -288,22 +295,22 @@ workflow {
     samples_chn2 = Channel.from(list_samples)
     samples_names = list_samples.toString().replace("[", "").replace("]", "").replace(",", "")
 
-    REFERENCE_GENOME_HG38(Channel.fromPath(params.genome))
+    REFERENCE_GENOME(Channel.fromPath(params.genome))
     
     if (params.concat) {
         CONCATENATE_BAMS(files, samples_chn, params.replicates)
-        METHYLDACKEL(files, CONCATENATE_BAMS.out.collect(), REFERENCE_GENOME_HG38.out.collect(), samples_chn, params.replicates)
+        METHYLDACKEL(files, CONCATENATE_BAMS.out.collect(), REFERENCE_GENOME.out.collect(), samples_chn, params.replicates)
     }
     else {
-        METHYLDACKEL(files, [], REFERENCE_GENOME_HG38.out.collect(), samples_chn,params.replicates)
+        METHYLDACKEL(files, [], REFERENCE_GENOME.out.collect(), samples_chn,params.replicates)
     }
 
     CORRELATION_AND_CLUSTERING(files, METHYLDACKEL.out.collect(), samples_names, list_samples.size(), control, params.cutoff_regions, params.cutoff_heatmap, params.replicates)
     METILENE(files, CORRELATION_AND_CLUSTERING.out.collect(), control, samples_chn2, params.replicates)
     GENOMIC_REGIONS(files, CORRELATION_AND_CLUSTERING.out.collect(), METILENE.out.collect())
-    GENE_NAMES(files, METILENE.out.collect(), control, samples_chn2, params.cell_tpm)
+    GENE_NAMES(files, METILENE.out.collect(), control, samples_chn2, params.cell_tpm, params.refseq_genes)
 
-    if (list_samples.size() > 1 & list_samples.size() <= 7) {
+    if (list_samples.size() > 1 & list_samples.size() <= 6) {
         VENN_DIAGRAM(files, GENE_NAMES.out.collect())
     }
 
