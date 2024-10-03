@@ -15,7 +15,9 @@ The pipeline inputs **BAM files**, and outputs multiple txt and bedGraph files (
 ![image](https://i.ibb.co/80RgK03/test.png)
 
 > [!NOTE]
-> This pipeline uses by default the hg38 reference genome. Other reference genomes can be used but the genomic regions output will be skipped.
+> **This pipeline uses by default the hg38 reference genome**
+>
+> **Other reference genomes are available to used but the genomic regions output will be skipped**
 
 # Install conda environment
 
@@ -35,17 +37,25 @@ conda activate methylation
  - `--samples` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [String] sample names separated by comma **(always write the control name first!)**
  - `--replicates` &nbsp;&nbsp; [Integer] number of sample replicates
  - `--genome` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Path to the hg38 or other reference genome file **(.fa.gz)** (available in: http://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz)
- - `--refseq_genes` Path to the refseq genes file in bed format **(version from 2023-11-24 can be found in Scripts folder for hg38 genome)**
-
-**Note: All samples and additional files must be placed in the scripts folder**
+ - `--refseq_genes` Path to the refseq genes file in bed format **(version from 2023-11-24 can be found in scripts folder for hg38 genome)**
 
 **Optional inputs:**
 - `--concat ` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Option to concatenate BAM files from different runs
 - `--cell_tpm` &nbsp;&nbsp;&nbsp; Optional file containing two collumns, one with gene names and the other with expression levels in transcripts per million (TPM) for a cell line or cell type identical or similar to the cells under study (available in: https://www.ebi.ac.uk/gxa/experiments/E-MTAB-2770/Results) for gene name filtering
+-  `--no_hg38` &nbsp;&nbsp; Option to skip genomic regions output if not using hg38 reference genome
 - `--cutoff_regions` &nbsp;&nbsp; [Integer] cutoff (from 1 to 100) for the difference between samples methylation frequency vs control methylation frequency for genomic annotations (default: 75)
 - `--cutoff_heatmap` &nbsp;&nbsp; [Integer] cutoff (from 1 to 100) for the difference between samples methylation frequency vs control methylation frequency for clustering analysis (default: 100)
 
-### Examples
+> [!IMPORTANT]
+> **All samples and additional files must be placed in the scripts folder**
+> 
+> **BAM files should start with the samples name provided in the –-samples input, followed by replicate number**
+>
+>  **Example:**
+>  - File names: **Control_rep1**_library.bam; **Sample1_rep1**_library.bam
+>  - Pipeline : --samples **"Control","Sample1"** --replicates **1**
+
+# Examples
 
 **Example**
 ```
