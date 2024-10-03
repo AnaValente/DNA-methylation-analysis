@@ -6,13 +6,16 @@ The pipeline inputs **BAM files**, and outputs multiple txt and bedGraph files (
 - Per base methylation metrics (.bedGraph)
 - Differentially methylated regions (.bedGraph)
 - Correlation matrix and PCA (.png)
-- Heatmap with signature differences between the controls and samples (.pdf)
+- Heatmap with signature differences between the controls and samples (.png)
 - Genomic distribution across the **hg38 reference genome** of CpGs with different methylation frequencies between samples and controls (.png)
 - Genomic distribution across the **hg38 reference genome** of differentially methylated regions (.png)
 - Closest RefSeq genes **(version from 2023-11-24)** to the differentially methylated regions (.txt/.bedGraph)
 - Venn diagram of the closest genes **(only if two or more samples were used as input)** (.png)
 
 ![image](https://i.ibb.co/80RgK03/test.png)
+
+> [!NOTE]
+> This pipeline uses by default the hg38 reference genome. Other reference genomes can be used but the genomic regions output will be skipped.
 
 # Install conda environment
 
@@ -28,10 +31,11 @@ conda activate methylation
 # Usage
 
 **Mandatory inputs:**
- - `--files` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Path to scripts and samples folder
- - `--samples` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [String] sample names separated by comma **(always write the control name first!)**
- - `--replicates` &nbsp; [Integer] number of sample replicates
- - `--genome` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Path to the hg38 reference genome file **(.fa.gz)** (available in: http://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz)
+ - `--files` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Path to scripts and samples folder
+ - `--samples` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [String] sample names separated by comma **(always write the control name first!)**
+ - `--replicates` &nbsp;&nbsp; [Integer] number of sample replicates
+ - `--genome` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Path to the hg38 or other reference genome file **(.fa.gz)** (available in: http://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz)
+ - `--refseq_genes` Path to the refseq genes file in bed format **(version from 2023-11-24 can be found in Scripts folder for hg38 genome)**
 
 **Note: All samples and additional files must be placed in the scripts folder**
 
@@ -62,12 +66,3 @@ nextflow run Methylation_pipeline.nf --files "Scripts/*" --samples 'Control','Sa
 ```
 nextflow run Methylation_pipeline.nf --files "Scripts/*" --samples 'Control','Sample1','Sample2' --replicates 2 --genome hg38.fa.gz --refseq_genes RefSeq_genes.bed --cutoff_regions 50 --cutoff_heatmap 75
 ```
-
-
-
-
-
-
-
-
-
