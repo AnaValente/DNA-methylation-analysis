@@ -17,7 +17,7 @@ The pipeline inputs **BAM files**, and outputs multiple txt and bedGraph files (
 > [!NOTE]
 > **This pipeline uses by default the hg38 reference genome**
 >
-> **Other reference genomes are available to used but the genomic regions output will be skipped**
+> **Other reference genomes are available to use, but the genomic regions output will be skipped**
 
 # Install conda environment
 
@@ -47,13 +47,15 @@ conda activate methylation
 - `--cutoff_heatmap` &nbsp;&nbsp; [Integer] cutoff (from 1 to 100) for the difference between samples methylation frequency vs control methylation frequency for clustering analysis (default: 100)
 
 > [!IMPORTANT]
-> **All samples and additional files must be placed in the scripts folder**
+> - **All samples and additional files must be placed in the scripts folder**
 > 
-> **BAM files should start with the samples name provided in the –-samples input, followed by replicate number**
+> - **BAM files should start with the samples name provided in the –-samples input, followed by replicate number**
 >
->  **Example:**
->  - File names: **Control_rep1**_library.bam; **Sample1_rep1**_library.bam
->  - Pipeline : --samples **"Control","Sample1"** --replicates **1**
+> - **If there are no replicates, input the number 1**
+>
+>  - **Example:**
+>    - **File names:** **Control_rep1**_library.bam; **Sample1_rep1**_library.bam
+>    - **Pipeline :** --samples **"Control","Sample1"** --replicates **1**
 
 # Examples
 
