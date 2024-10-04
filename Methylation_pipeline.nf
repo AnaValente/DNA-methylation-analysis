@@ -10,6 +10,7 @@ params.cutoff_regions = 75
 params.cutoff_heatmap = 100
 params.genome = false
 params.refseq_genes = false
+params.no_hg38 = false
 
 c_green = "\033[0;38;5;28m"
 c_yellow = "\033[0;38;5;142m"
@@ -53,7 +54,7 @@ process CONCATENATE_BAMS {
     val n_replicates
 
     output:
-    path "${samples}*_library_sorted.b*"
+    path "${samples}*__library_sorted.b*"
 
     shell:
     '''
@@ -90,7 +91,10 @@ process METHYLDACKEL {
 
 process CORRELATION_AND_CLUSTERING {
     // correlation and clustering analysis
-	
+
+	publishDir './Pipeline_results', pattern:"*png" , mode: 'copy'
+    publishDir './Pipeline_results/Methyldackel', pattern:"*CpGs.bedGraph" , mode: 'copy'
+
     input:
     path folder
     path bedgraphs
@@ -104,10 +108,6 @@ process CORRELATION_AND_CLUSTERING {
     output:
     path "*"
 
-    publishDir './Pipeline_results', pattern:"*png" , mode: 'copy'
-    publishDir './Pipeline_results', pattern:"*pdf" , mode: 'copy'
-    publishDir './Pipeline_results', pattern:"*csv" , mode: 'copy'
-
     """
 	python3 methyldackel_cluster_table.py ${bedgraphs} ${samples} ${number_samples} ${control} ${cutoff_regions} ${cutoff_heatmap} ${n_replicates} && ./correlation_analysis.R correlation.csv ${number_samples} ${n_replicates} ${control} && ./heatmap.R diff_methylation_filtered.csv 
     """
@@ -115,9 +115,6 @@ process CORRELATION_AND_CLUSTERING {
 
 process METILENE { 
     // Calculation of the differentially methylated regions
-
-    publishDir './Pipeline_results/Metilene', mode: 'copy'
-    
 	
     input:
     path folder
@@ -134,22 +131,22 @@ process METILENE {
     samples_rep=""
     control_rep=""
 
-    if  [[ ! -f !{control}_rep2_CpGs.bedGraph ]] && [[ -f !{samples}_rep2_CpGs.bedGraph ]]; then
-        metilene_input.pl --in1 !{samples}_rep1_CpGs.bedGraph,!{samples}_rep2_CpGs.bedGraph --in2 !{control}_rep1_CpGs.bedGraph
-        metilene -a g1 -b g2 metilene_g1_g2.input | sort -V -k1,1 -k2,2n > metilene_!{samples}_!{control}.bedgraph 
-        metilene_output.pl -q metilene_!{samples}_!{control}.bedgraph -o ./metilene_!{samples}_!{control}
+    if  [[ ! -f !{control}_rep2_library_trimmed_CpGs.bedGraph ]] && [[ -f !{samples}_rep2_library_trimmed_CpGs.bedGraph ]]; then
+        metilene_input.pl --in1 !{samples}_rep1_library_trimmed_CpGs.bedGraph,!{samples}_rep2_library_trimmed_CpGs.bedGraph --in2 !{control}_rep1_library_trimmed_CpGs.bedGraph
+        metilene -a g1 -b g2 metilene_g1_g2.input | sort -V -k1,1 -k2,2n > metilene_!{samples}.bedgraph 
+        metilene_output.pl -q metilene_!{samples}.bedgraph -o ./metilene_!{samples}_
 
     else
 
         for i in $(seq 1 !{n_replicates})
         do
-            samples_rep=${samples_rep}",!{samples}_rep${i}_CpGs.bedGraph"
-            control_rep=${control_rep}",!{control}_rep${i}_CpGs.bedGraph"
+            samples_rep=${samples_rep}",!{samples}_rep${i}_library_trimmed_CpGs.bedGraph"
+            control_rep=${control_rep}",!{control}_rep${i}_library_trimmed_CpGs.bedGraph"
         done
 
         metilene_input.pl --in1 ${samples_rep/,/} --in2 ${control_rep/,/}
-        metilene -a g1 -b g2 metilene_g1_g2.input | sort -V -k1,1 -k2,2n > metilene_!{samples}_!{control}.bedgraph 
-        metilene_output.pl -q metilene_!{samples}_!{control}.bedgraph -o ./metilene_!{samples}_!{control}
+        metilene -a g1 -b g2 metilene_g1_g2.input | sort -V -k1,1 -k2,2n > metilene_!{samples}.bedgraph 
+        metilene_output.pl -q metilene_!{samples}.bedgraph -o ./metilene_!{samples}_
 
     fi
     '''
@@ -159,7 +156,6 @@ process GENOMIC_REGIONS {
     // Genomic regions retrieval
 
     publishDir './Pipeline_results', mode: 'copy'
-    
 	
     input:
     path folder
@@ -176,10 +172,7 @@ process GENOMIC_REGIONS {
 
 process GENE_NAMES {
     // Gene name retrieval
-
-    publishDir './Pipeline_results/Gene_names', mode: 'copy'
     
-	
     input:
     path folder
     path bedgraph
@@ -193,7 +186,7 @@ process GENE_NAMES {
     path "*_merged_genes*.*"
 
     """
-	./get_refseq_gene_names.sh metilene_${samples}_${control}_qval.0.05.bedgraph ${refseq_genes} ${samples}_${control} && python3 expressed_cell_genes.py ${control} ${samples} ${cell_tpm}
+	./get_refseq_gene_names.sh metilene_${samples}__qval.0.05.bedgraph ${refseq_genes} ${samples} && python3 expressed_cell_genes.py ${samples} ${cell_tpm}
     """
 }
 
@@ -202,7 +195,6 @@ process VENN_DIAGRAM {
 
     publishDir './Pipeline_results', mode: 'copy'
     
-	
     input:
     path folder
     path genes
@@ -218,7 +210,9 @@ process VENN_DIAGRAM {
 
 process FINAL_REPORT {
     
-    publishDir './Pipeline_results', mode: 'copy'
+    publishDir './Pipeline_results/', pattern:"*_report.txt", mode: 'copy'
+    publishDir './Pipeline_results/Metilene', pattern:"*_qval.0.05.bedgraph" , mode: 'copy'
+    publishDir './Pipeline_results/Gene_names', pattern:"*_merged_genes*.*" , mode: 'copy'
 
     input:
     path bams
@@ -230,7 +224,7 @@ process FINAL_REPORT {
     val samples
 
     output:
-    path "Final_report.txt"
+    path "*"
 
     shell:
     '''
@@ -243,22 +237,24 @@ process FINAL_REPORT {
     fi
 
     echo -e "Methyldackel:\\n=============" >> Final_report.txt
-    wc -l *_library_sorted_CpG.bedGraph | sed 's/_library.*//g' | awk '{print $2 ":", $1-1, "CpG sites\\n"}' >> Final_report.txt
+    wc -l *__library_sorted_CpG.bedGraph | sed 's/__library.*//g' | awk '{print $2 ":", $1-1, "CpG sites\\n"}' >> Final_report.txt
     echo -e "\\nCorrelation and clustering:\\n===========================" >> Final_report.txt
     echo -e "$(wc -l correlation.csv | awk '{print $1-1}')" "CpG sites were used for the correlation matrix and PCA\\n" >> Final_report.txt
     echo -e "$(wc -l diff_methylation_filtered.csv | awk '{print $1-1}')" "CpG sites were used for the hierarchical clustering heatmap with a difference of !{cutoff_heatmap}% between the controls and samples\\n" >> Final_report.txt
     echo -e "\\nMetilene:\\n=========" >> Final_report.txt
     
     for sample in !{samples}; do
-        echo -ne "$(wc -l metilene_${sample}*_qval.0.05.bedgraph | sed 's/metilene_//' | sed 's/_.*//g' | awk '{print $2 ":", $1, "differentially methylated regions,"}') where $(awk '$4 > 0 {print ;}' metilene_${sample}*_qval.0.05.bedgraph  | wc -l) are hypermetilated" >> Final_report.txt
+        echo -ne "$(wc -l metilene_${sample}*_qval.0.05.bedgraph | sed 's/metilene_//' | sed 's/__.*//g' | awk '{print $2 ":", $1, "differentially methylated regions,"}') where $(awk '$4 > 0 {print ;}' metilene_${sample}*_qval.0.05.bedgraph  | wc -l) are hypermetilated" >> Final_report.txt
         echo -ne " and" "$(awk '$4 < 0 {print ;}' metilene_${sample}*_qval.0.05.bedgraph  | wc -l)" "are hypometilated\\n" >> Final_report.txt
     done
 
     echo -e "\\nGenes:\\n======" >> Final_report.txt
 
     for sample in !{samples}; do
-        wc -l ${sample}*.txt | sed 's/_.*//g' | awk '{print $2 ":", $1, "genes"}' >> Final_report.txt
+        wc -l ${sample}*.txt | sed 's/__.*//g' | awk '{print $2 ":", $1, "genes"}' >> Final_report.txt
     done
+
+    for i in *__* ; do cp "${i}" "${i/__/_}" ; done
     '''
 }
 
@@ -280,7 +276,7 @@ workflow {
         error("No replicate number provided, if there are no replicates input 1 --replicates")
     }
     
-    if (!params.refseq_genes) {
+    if (!params.refseq_genes && params.refseq_genes < 0) {
         error("No RefSeq file provided --refseq_genes")
     }
     
@@ -300,15 +296,19 @@ workflow {
     if (params.concat) {
         CONCATENATE_BAMS(files, samples_chn, params.replicates)
         METHYLDACKEL(files, CONCATENATE_BAMS.out.collect(), REFERENCE_GENOME.out.collect(), samples_chn, params.replicates)
-    }
-    else {
+    } else {
         METHYLDACKEL(files, [], REFERENCE_GENOME.out.collect(), samples_chn,params.replicates)
     }
 
     CORRELATION_AND_CLUSTERING(files, METHYLDACKEL.out.collect(), samples_names, list_samples.size(), control, params.cutoff_regions, params.cutoff_heatmap, params.replicates)
     METILENE(files, CORRELATION_AND_CLUSTERING.out.collect(), control, samples_chn2, params.replicates)
-    GENOMIC_REGIONS(files, CORRELATION_AND_CLUSTERING.out.collect(), METILENE.out.collect())
-    GENE_NAMES(files, METILENE.out.collect(), control, samples_chn2, params.cell_tpm, params.refseq_genes)
+    
+    if (params.no_hg38) {
+        GENE_NAMES(files, METILENE.out.collect(), control, samples_chn2, params.cell_tpm, params.refseq_genes)
+    } else {
+        GENOMIC_REGIONS(files, CORRELATION_AND_CLUSTERING.out.collect(), METILENE.out.collect())
+        GENE_NAMES(files, METILENE.out.collect(), control, samples_chn2, params.cell_tpm, params.refseq_genes)
+    }
 
     if (list_samples.size() > 1 & list_samples.size() <= 6) {
         VENN_DIAGRAM(files, GENE_NAMES.out.collect())
