@@ -53,7 +53,7 @@ change_annotation <- function(df) {
 genomic_regions_meth <- function(annotations) {
 
   # List all files with *_methylation.csv prefix
-  annotatr_files <- list.files(pattern = "*_methylation.csv", full.names = TRUE)
+  annotatr_files <- list.files(pattern = "*__methylation.csv", full.names = TRUE)
 
   # Read files regions
   sample_regions <- lapply(annotatr_files, function(i) {read_regions(i, genome = "hg38", format = "bedgraph")})
@@ -66,7 +66,7 @@ genomic_regions_meth <- function(annotations) {
 
   for (i in seq(1, length(annots_sum))) {
     # Remove unwanted characters from sample name
-    name <- sub("_.*", "", as.character(annotatr_files[[i]]))
+    name <- sub("__.*", "", as.character(annotatr_files[[i]]))
     name  <- sub("./", "", name)
 
     colnames(annots_sum[[i]]) <- c("Regions", name)
@@ -95,7 +95,7 @@ genomic_regions_meth <- function(annotations) {
           axis.text.x = element_text(angle = 45, hjust = 1)) +
     labs(y = "Nº of CpG sites") + scale_x_discrete() +
     scale_y_continuous(expand = expansion(mult = c(0, .1)))
-  ggsave("genomic_regions_cpg.png", width = 20, height = 15, units = "cm")
+  ggsave("genomic_regions_CpG.png", width = 20, height = 15, units = "cm")
 
   return(matrix)
 }
@@ -143,7 +143,7 @@ genomic_regions_dmr <- function(annotations) {
 
   for (i in seq(1, length(dmr_files))) {
     name <- sub("./metilene_", "", as.character(dmr_files[[i]]))
-    name  <- sub("_.*", "", name)
+    name  <- sub("__.*", "", name)
     # Add hypomethylation collumn
     hypo_col[[i]][, paste(name, "DMR", sep = " ")] <- rep("Hypomethylation", each = nrow(hypo_col[[i]]))
     # Add hypermethylation collumn

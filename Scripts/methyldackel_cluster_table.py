@@ -47,7 +47,7 @@ def trim_bedgraph(cutoff, control):
 
     merged_dataframe2 = merged_dataframe.iloc[:, 3::]
     for col in merged_dataframe2.columns:
-        merged_dataframe[['chr','start','end', col]].to_csv(col + '_CpGs.bedGraph', sep='\t', index=False, header = False)
+        merged_dataframe[['chr','start','end', col]].to_csv(col + '_library_trimmed_CpGs.bedGraph', sep='\t', index=False, header = False)
     
     return merged_dataframe
 
@@ -114,7 +114,7 @@ def cutoff_genm_regions(df, n_replicates, samples, n_samples, control, cutoff):
     for sample in samples_names:
         
         sample_df = comp_meth_frequencies(df, n_replicates, [sample], control, cutoff)
-        sample_df.to_csv(sample +'_methylation.csv', sep='\t', index=False, header=False)
+        sample_df.to_csv(sample +'__methylation.csv', sep='\t', index=False, header=False)
 
 if __name__ == "__main__":
     # Merge bedGraph files and store in a file and trim with a cutoff of 5

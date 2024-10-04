@@ -15,7 +15,7 @@ diagram <- function() {
   genes_matrix <- lapply(gene_files, function(i) {as.character(as.matrix(read.csv(i, header = FALSE)))})
 
   # Trim sample names
-  sample_names <- lapply(gene_files, function(i) {sub("_.*", "", as.character(i))})
+  sample_names <- lapply(gene_files, function(i) {sub("__.*", "", as.character(i))})
 
   sample_names <- lapply(sample_names, function(i) {sub("./", "", as.character(i))})
 
