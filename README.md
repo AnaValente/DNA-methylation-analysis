@@ -9,7 +9,7 @@ The pipeline inputs **BAM files**, and outputs multiple txt and bedGraph files (
 - Heatmap with signature differences between the controls and samples (.png)
 - Genomic distribution across the **hg38 reference genome** of CpGs with different methylation frequencies between samples and controls (.png)
 - Genomic distribution across the **hg38 reference genome** of differentially methylated regions (.png)
-- Closest RefSeq genes **(version from 2023-11-24)** to the differentially methylated regions (.txt/.bedGraph)
+- Closest RefSeq genes **(version from 2024-09-11)** to the differentially methylated regions (.txt/.bedGraph)
 - Venn diagram of the closest genes **(only if two or more samples were used as input)** (.png)
 
 ![image](https://i.ibb.co/80RgK03/test.png)
@@ -37,7 +37,7 @@ conda activate methylation
  - `--samples` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [String] sample names separated by comma **(always write the control name first!)**
  - `--replicates` &nbsp;&nbsp; [Integer] number of sample replicates
  - `--genome` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Path to the hg38 or other reference genome file **(.fa.gz)** (available in: http://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz)
- - `--refseq_genes` Path to the refseq genes file in bed format **(version from 2023-11-24 can be found in scripts folder for hg38 genome)**
+ - `--refseq_genes` Path to the refseq genes file in bed format **(version from 2024-09-11 can be found in scripts folder for hg38 genome)**
 
 **Optional inputs:**
 - `--concat ` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Option to concatenate BAM files from different runs
