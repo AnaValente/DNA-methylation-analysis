@@ -5,12 +5,13 @@ params.files = false
 params.samples = false
 params.concat = false
 params.replicates = false
-params.cell_tpm = false
-params.cutoff_regions = 75
-params.cutoff_heatmap = 100
+params.cellTpm = false
+params.cutoffRegions = 75
+params.cutoffHeatmap = 100
 params.genome = false
-params.refseq_genes = false
-params.no_hg38 = false
+params.refseqGenes = false
+params.noHg38 = false
+params.inclusionBed = false
 
 c_green = "\033[0;38;5;28m"
 c_yellow = "\033[0;38;5;142m"
@@ -78,6 +79,7 @@ process METHYLDACKEL {
     path genome
     val samples
     val n_replicates
+    val inclusion_bed
 
     output:
     path "*.bedGraph"
@@ -85,7 +87,7 @@ process METHYLDACKEL {
     publishDir './Pipeline_results/Methyldackel', pattern:"*svg" , mode: 'copy'
 
     """
-    ./methyldackel.sh ${n_replicates} ${samples}
+    ./methyldackel.sh ${n_replicates} ${samples} ${inclusion_bed}
     """
 }
 
@@ -276,11 +278,11 @@ workflow {
         error("No replicate number provided, if there are no replicates input 1 --replicates")
     }
     
-    if (!params.refseq_genes && params.refseq_genes < 0) {
-        error("No RefSeq file provided --refseq_genes")
+    if (!params.refseqGenes && params.refseqGenes < 0) {
+        error("No RefSeq file provided --refseqGenes")
     }
     
-    if (params.cutoff_regions < 0 || params.cutoff_regions > 100 || params.cutoff_heatmap < 0 || params.cutoff_heatmap > 100) {
+    if (params.cutoffRegions < 0 || params.cutoffRegions > 100 || params.cutoffHeatmap < 0 || params.cutoffHeatmap > 100) {
         error("Please provide a cutoff number between 0 and 100")
     }
 
@@ -295,19 +297,19 @@ workflow {
     
     if (params.concat) {
         CONCATENATE_BAMS(files, samples_chn, params.replicates)
-        METHYLDACKEL(files, CONCATENATE_BAMS.out.collect(), REFERENCE_GENOME.out.collect(), samples_chn, params.replicates)
+        METHYLDACKEL(files, CONCATENATE_BAMS.out.collect(), REFERENCE_GENOME.out.collect(), samples_chn, params.replicates, params.inclusionBed)
     } else {
-        METHYLDACKEL(files, [], REFERENCE_GENOME.out.collect(), samples_chn,params.replicates)
+        METHYLDACKEL(files, [], REFERENCE_GENOME.out.collect(), samples_chn, params.replicates, params.inclusionBed)
     }
 
-    CORRELATION_AND_CLUSTERING(files, METHYLDACKEL.out.collect(), samples_names, list_samples.size(), control, params.cutoff_regions, params.cutoff_heatmap, params.replicates)
+    CORRELATION_AND_CLUSTERING(files, METHYLDACKEL.out.collect(), samples_names, list_samples.size(), control, params.cutoffRegions, params.cutoffHeatmap, params.replicates)
     METILENE(files, CORRELATION_AND_CLUSTERING.out.collect(), control, samples_chn2, params.replicates)
     
-    if (params.no_hg38) {
-        GENE_NAMES(files, METILENE.out.collect(), control, samples_chn2, params.cell_tpm, params.refseq_genes)
+    if (params.noHg38) {
+        GENE_NAMES(files, METILENE.out.collect(), control, samples_chn2, params.cellTpm, params.refseqGenes)
     } else {
         GENOMIC_REGIONS(files, CORRELATION_AND_CLUSTERING.out.collect(), METILENE.out.collect())
-        GENE_NAMES(files, METILENE.out.collect(), control, samples_chn2, params.cell_tpm, params.refseq_genes)
+        GENE_NAMES(files, METILENE.out.collect(), control, samples_chn2, params.cellTpm, params.refseqGenes)
     }
 
     if (list_samples.size() > 1 & list_samples.size() <= 6) {
@@ -315,9 +317,9 @@ workflow {
     }
 
     if (params.concat) {
-        FINAL_REPORT(CONCATENATE_BAMS.out.collect(), METHYLDACKEL.out.collect(), CORRELATION_AND_CLUSTERING.out.collect(), METILENE.out.collect(), GENE_NAMES.out.collect(), params.cutoff_heatmap, samples_names)
+        FINAL_REPORT(CONCATENATE_BAMS.out.collect(), METHYLDACKEL.out.collect(), CORRELATION_AND_CLUSTERING.out.collect(), METILENE.out.collect(), GENE_NAMES.out.collect(), params.cutoffHeatmap, samples_names)
     }
     else {
-        FINAL_REPORT([], METHYLDACKEL.out.collect(), CORRELATION_AND_CLUSTERING.out.collect(), METILENE.out.collect(), GENE_NAMES.out.collect(), params.cutoff_heatmap, samples_names)
+        FINAL_REPORT([], METHYLDACKEL.out.collect(), CORRELATION_AND_CLUSTERING.out.collect(), METILENE.out.collect(), GENE_NAMES.out.collect(), params.cutoffHeatmap, samples_names)
     }
 }
