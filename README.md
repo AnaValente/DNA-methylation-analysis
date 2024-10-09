@@ -37,7 +37,7 @@ conda activate methylation
  - `--samples` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [String] sample names separated by comma **(always write the control name first!)**
  - `--replicates` &nbsp;&nbsp; [Integer] number of sample replicates
  - `--genome` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Path to the hg38 or other reference genome file **(.fa.gz)** (available in: http://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz)
- - `--refseqGenes` Path to the refseq genes file in bed format **(version from 2024-09-11 can be found in scripts folder for hg38 genome)**
+ - `--refseqGenes` Path to the refseq genes file in BED format **(version from 2024-09-11 can be found in scripts folder for hg38 genome)**
 
 **Optional inputs:**
 - `--concat ` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Option to concatenate BAM files from different runs
