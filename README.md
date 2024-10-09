@@ -37,14 +37,14 @@ conda activate methylation
  - `--samples` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [String] sample names separated by comma **(always write the control name first!)**
  - `--replicates` &nbsp;&nbsp; [Integer] number of sample replicates
  - `--genome` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Path to the hg38 or other reference genome file **(.fa.gz)** (available in: http://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz)
- - `--refseq_genes` Path to the refseq genes file in bed format **(version from 2024-09-11 can be found in scripts folder for hg38 genome)**
+ - `--refseqGenes` Path to the refseq genes file in bed format **(version from 2024-09-11 can be found in scripts folder for hg38 genome)**
 
 **Optional inputs:**
 - `--concat ` &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Option to concatenate BAM files from different runs
-- `--cell_tpm` &nbsp;&nbsp;&nbsp; Optional file containing two collumns, one with gene names and the other with expression levels in transcripts per million (TPM) for a cell line or cell type identical or similar to the cells under study (available in: https://www.ebi.ac.uk/gxa/experiments/E-MTAB-2770/Results) for gene name filtering
--  `--no_hg38` &nbsp;&nbsp; Option to skip genomic regions output if not using hg38 reference genome
-- `--cutoff_regions` &nbsp;&nbsp; [Integer] cutoff (from 1 to 100) for the difference between samples methylation frequency vs control methylation frequency for genomic annotations (default: 75)
-- `--cutoff_heatmap` &nbsp;&nbsp; [Integer] cutoff (from 1 to 100) for the difference between samples methylation frequency vs control methylation frequency for clustering analysis (default: 100)
+- `--cellTpm` &nbsp;&nbsp;&nbsp; Optional file containing two collumns, one with gene names and the other with expression levels in transcripts per million (TPM) for a cell line or cell type identical or similar to the cells under study (available in: https://www.ebi.ac.uk/gxa/experiments/E-MTAB-2770/Results) for gene name filtering
+-  `--noHg38` &nbsp;&nbsp; Option to skip genomic regions output if not using hg38 reference genome
+- `--cutoffRegions` &nbsp;&nbsp; [Integer] cutoff (from 1 to 100) for the difference between samples methylation frequency vs control methylation frequency for genomic annotations (default: 75)
+- `--cutoffHeatmap` &nbsp;&nbsp; [Integer] cutoff (from 1 to 100) for the difference between samples methylation frequency vs control methylation frequency for clustering analysis (default: 100)
 
 > [!IMPORTANT]
 > - **All samples and additional files must be placed in the scripts folder**
@@ -61,20 +61,20 @@ conda activate methylation
 
 **Example**
 ```
-nextflow run Methylation_pipeline.nf --files "Scripts/*" --samples 'Control','Sample1','Sample2' --replicates 2 --genome hg38.fa.gz --refseq_genes RefSeq_genes.bed
+nextflow run Methylation_pipeline.nf --files "Scripts/*" --samples 'Control','Sample1','Sample2' --replicates 2 --genome hg38.fa.gz --refseqGenes RefSeq_genes.bed
 ```
 
 **Example with BAM concatenation**
 ```
-nextflow run Methylation_pipeline.nf --files "Scripts/*" --samples 'Control','Sample1','Sample2' --replicates 2 --genome hg38.fa.gz --refseq_genes RefSeq_genes.bed --concat
+nextflow run Methylation_pipeline.nf --files "Scripts/*" --samples 'Control','Sample1','Sample2' --replicates 2 --genome hg38.fa.gz --refseqGenes RefSeq_genes.bed --concat
 ```
 
 **Example with genes filtered by file**
 ```
-nextflow run Methylation_pipeline.nf --files "Scripts/*" --samples 'Control','Sample1','Sample2' --replicates 2 --genome hg38.fa.gz --refseq_genes RefSeq_genes.bed --cell_tpm E-MTAB-2770-query-results.tsv 
+nextflow run Methylation_pipeline.nf --files "Scripts/*" --samples 'Control','Sample1','Sample2' --replicates 2 --genome hg38.fa.gz --refseqGenes RefSeq_genes.bed --cellTpm E-MTAB-2770-query-results.tsv 
 ```
 
 **Example with different cutoffs**
 ```
-nextflow run Methylation_pipeline.nf --files "Scripts/*" --samples 'Control','Sample1','Sample2' --replicates 2 --genome hg38.fa.gz --refseq_genes RefSeq_genes.bed --cutoff_regions 50 --cutoff_heatmap 75
+nextflow run Methylation_pipeline.nf --files "Scripts/*" --samples 'Control','Sample1','Sample2' --replicates 2 --genome hg38.fa.gz --refseqGenes RefSeq_genes.bed --cutoffRegions 50 --cutoffHeatmap 75
 ```
