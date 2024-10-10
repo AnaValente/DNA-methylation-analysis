@@ -94,7 +94,7 @@ process METHYLDACKEL {
 process CORRELATION_AND_CLUSTERING {
     // correlation and clustering analysis
 
-	publishDir './Pipeline_results', pattern:"*png" , mode: 'copy'
+    publishDir './Pipeline_results', pattern:"*png" , mode: 'copy'
     publishDir './Pipeline_results/Methyldackel', pattern:"*CpGs.bedGraph" , mode: 'copy'
 
     input:
