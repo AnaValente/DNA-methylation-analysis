@@ -20,8 +20,9 @@ heatmap <- function(df, filename) {
   png(filename, units = "in", res = reso, height = length, width = length)
 
   heatmap.2(as.matrix(df), srtCol = 360, adjCol = c(0.5, 0),
-            cexRow = 0.8, margins = c(3, 12.5), hclustfun = hclust,
-            trace = "none", col = colorpanel(100, "red3", "gray", "blue4"))
+            cexRow = 0.8, cexCol = 1.1, margins = c(3, 12.5),
+            hclustfun = hclust, trace = "none",
+            col = colorpanel(100, "red3", "gray", "blue4"))
 
   dev.off()
 }

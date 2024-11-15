@@ -26,21 +26,24 @@ annotations <- function() {
 
 change_annotation <- function(df) {
   # Replace annotations names for new annotation names
-  annots_types_old <- c("hg38_cpg_islands", "hg38_genes_1to5kb",
-                        "hg38_genes_3UTRs", "hg38_genes_5UTRs",
-                        "hg38_genes_cds", "hg38_genes_exonintronboundaries",
+  annots_types_old <- c("hg38_cpg_inter", "hg38_cpg_islands",
+                        "hg38_cpg_shelves", "hg38_cpg_shores",
+                        "hg38_genes_1to5kb", "hg38_genes_3UTRs",
+                        "hg38_genes_5UTRs", "hg38_genes_cds",
+                        "hg38_genes_exonintronboundaries",
                         "hg38_genes_exons", "hg38_genes_firstexons",
                         "hg38_genes_intergenic",
                         "hg38_genes_intronexonboundaries",
                         "hg38_genes_introns", "hg38_genes_promoters")
 
-  annots_types_new <- c("CpG islands", "1to5kb", "3UTRs",
+  annots_types_new <- c("inter CpG islands", "CpG islands",
+                        "CpG shelves", "CpG shores", "1to5kb", "3UTRs",
                         "5UTRs", "cds", "exon/intron boundaries",
                         "exons", "first exons", "intergenic",
                         "intron/exon boundaries", "introns", "promoters")
 
   for (n in seq(1, nrow(df))) {
-    for (j in 1:12) {
+    for (j in 1:15) {
       if (df[n, "Regions"] == annots_types_old[j]) {
         df[n, "Regions"] <- annots_types_new[j]
       }
@@ -84,15 +87,16 @@ genomic_regions_meth <- function(annotations) {
   df_list <- df_list[, 2:ncol(df_list), drop = FALSE] # Remove annotation names
 
   # Melt DataFrame columns into rows
-  matrix <- melt(as.matrix(df_list), value.name = "Count", varnames = c("Annotations", "Nanomaterial"))
+  matrix <- melt(as.matrix(df_list), value.name = "Count", varnames = c("Annotations", "Sample"))
 
   # Plot matrix
-  ggplot(matrix, aes(fill = Nanomaterial, y = Count, x = Annotations)) +
+  ggplot(matrix, aes(fill = Sample, y = Count, x = Annotations)) +
     geom_bar(stat = "identity", position = position_dodge(0.92), width = 0.9) +
     theme_light() +
     theme(panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(), legend.position = "top",
-          axis.text.x = element_text(angle = 45, hjust = 1)) +
+          axis.text.x = element_text(angle = 45, hjust = 1),
+          axis.text=element_text(color="black")) +
     labs(y = "Nº of CpG sites") + scale_x_discrete() +
     scale_y_continuous(expand = expansion(mult = c(0, .1)))
   ggsave("genomic_regions_CpG.png", width = 20, height = 15, units = "cm")
@@ -102,13 +106,13 @@ genomic_regions_meth <- function(annotations) {
 
 genomic_regions_dmr <- function(annotations) {
 
-  ids <- c("hg38_cpg_islands", "hg38_genes_1to5kb",
-           "hg38_genes_3UTRs", "hg38_genes_5UTRs",
-           "hg38_genes_cds", "hg38_genes_exonintronboundaries",
-           "hg38_genes_exons", "hg38_genes_firstexons",
-           "hg38_genes_intergenic",
-           "hg38_genes_intronexonboundaries",
-           "hg38_genes_introns", "hg38_genes_promoters")
+  ids <- c("hg38_cpg_inter", "hg38_cpg_islands", "hg38_cpg_shelves",
+           "hg38_cpg_shores", "hg38_genes_1to5kb", "hg38_genes_3UTRs",
+           "hg38_genes_5UTRs", "hg38_genes_cds",
+           "hg38_genes_exonintronboundaries", "hg38_genes_exons",
+           "hg38_genes_firstexons", "hg38_genes_intergenic",
+           "hg38_genes_intronexonboundaries", "hg38_genes_introns",
+           "hg38_genes_promoters")
 
   # List all files with *0.05.bedgraph prefix
   dmr_files <- list.files(pattern = "*0.05.bedgraph", full.names = TRUE)
@@ -139,7 +143,7 @@ genomic_regions_dmr <- function(annotations) {
   hyper_col <- lapply(hyper_annsum, setNames, c("Regions", "Nº of DMR"))
   hyper_col <- lapply(hyper_col, function(i) {i %>% complete(Regions = ids, fill = list(`Nº of DMR` = 0))})
   hyper_col <- lapply(hyper_col, change_annotation)
-  
+
 
   for (i in seq(1, length(dmr_files))) {
     name <- sub("./metilene_", "", as.character(dmr_files[[i]]))
@@ -152,18 +156,25 @@ genomic_regions_dmr <- function(annotations) {
     # Bind the rows of the hypermethylated DMR dataframe and the hypomethylated DMR dataframe
     sample_list <- do.call("rbind", sample_list)
 
+    sample_list <- sample_list %>%
+      group_by(Regions, `Nº of DMR`) %>%
+      filter(!(`Nº of DMR` == 0 & n() > 1)) %>%
+      ungroup()
+
     fill_name <- colnames(sample_list)[3]
 
     ggplot(sample_list, aes(fill = .data[[fill_name]], y = `Nº of DMR`, x = Regions)) +
-      geom_bar(stat = "identity", position = position_dodge(0.92),
-               width = 0.9) +
+      geom_bar(stat = "identity", position = position_dodge(0.92), width = 0.9) +
       theme_light() +
       theme(panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(), legend.position = "top",
             axis.text.x = element_text(angle = 45, hjust = 1, size = 12),
             legend.title = element_text(size = 12),
-            legend.text = element_text(size = 12)) +
-      scale_y_continuous(expand = expansion(mult = c(0, .1)))
+            legend.text = element_text(size = 12),
+            axis.text=element_text(color="black")) +
+            scale_fill_manual(values = c("Hypomethylation" = "#619CFF", "Hypermethylation" = "#F8766D")) +
+            scale_y_continuous(expand = expansion(mult = c(0, .1))) +
+            scale_x_discrete(limits = unique(sample_list$Regions))
 
     ggsave(paste(name, "_genomic_regions_DMR.png", sep = ""), width = 20, height = 15, units = "cm")
   }

@@ -23,16 +23,13 @@ c_reset = "\033[0m"
 log.info"""
         . ,-"-.   ,-"-. ,-"-.   ,-"-. ,-"-.   ,-"-. ,-"-.    ,-"-. ,-"-.   ,
          / ${c_green}| ${c_yellow}| ${c_reset}\\ / ${c_orange}| ${c_blue}| ${c_reset}/ ${c_blue}| ${c_green}| ${c_reset}\\ / ${c_yellow}| ${c_blue}| ${c_reset}/ ${c_yellow}| ${c_orange}| ${c_reset}\\ / ${c_green}| ${c_blue}| ${c_reset}/ ${c_orange}| ${c_blue}| ${c_reset}\\  / ${c_yellow}| ${c_green}| ${c_reset}/ ${c_orange}| ${c_blue}| ${c_reset}\\ /${c_reset}
-         D N A   M E T H Y L A T I O N   A N A L Y S I S   P I P E L I N E
+          D N A  M E T H Y L A T I O N  A N A L Y S I S  P I P E L I N E
         / \\${c_blue}| ${c_orange}| ${c_reset}|\\| ${c_yellow}| ${c_green}|${c_reset}/ \\${c_green}| ${c_blue}| ${c_reset}|\\| ${c_orange}| ${c_green}|${c_reset}/ \\${c_orange}| ${c_yellow}| ${c_reset}|\\| ${c_blue}| ${c_green}|${c_reset}/ \\${c_yellow}| ${c_green}| ${c_reset}|\\|  ${c_orange}| ${c_blue}|${c_reset}/ \\${c_yellow}| ${c_green}| ${c_reset}|\\${c_reset}
            `-!-' `-!-'   `-!-' `-!-'   `-!-' `-!-'   `-!-'  `-!-'   `-!-' `-
         """.stripIndent()
 
 process REFERENCE_GENOME {
     // Download fasta file of the reference genome 
-    
-    publishDir "./Pipeline_results/Methyldackel", mode: "copy"
-    
     input:
     path genome
     
@@ -94,7 +91,7 @@ process METHYLDACKEL {
 process CORRELATION_AND_CLUSTERING {
     // correlation and clustering analysis
 
-    publishDir './Pipeline_results', pattern:"*png" , mode: 'copy'
+	publishDir './Pipeline_results', pattern:"*png" , mode: 'copy'
     publishDir './Pipeline_results/Methyldackel', pattern:"*CpGs.bedGraph" , mode: 'copy'
 
     input:
@@ -239,7 +236,7 @@ process FINAL_REPORT {
     fi
 
     echo -e "Methyldackel:\\n=============" >> Final_report.txt
-    wc -l *__library_sorted_CpG.bedGraph | sed 's/__library.*//g' | awk '{print $2 ":", $1-1, "CpG sites\\n"}' >> Final_report.txt
+    wc -l *_library_sorted_CpG.bedGraph | sed 's/_library.*//g' | awk '{print $2 ":", $1-1, "CpG sites\\n"}' >> Final_report.txt
     echo -e "\\nCorrelation and clustering:\\n===========================" >> Final_report.txt
     echo -e "$(wc -l correlation.csv | awk '{print $1-1}')" "CpG sites were used for the correlation matrix and PCA\\n" >> Final_report.txt
     echo -e "$(wc -l diff_methylation_filtered.csv | awk '{print $1-1}')" "CpG sites were used for the hierarchical clustering heatmap with a difference of !{cutoff_heatmap}% between the controls and samples\\n" >> Final_report.txt

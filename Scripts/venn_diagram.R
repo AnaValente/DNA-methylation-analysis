@@ -21,7 +21,7 @@ diagram <- function() {
 
   # Plot veen diagram
   venn <- ggVennDiagram(genes_matrix, label = "count", label_alpha = 0,
-                        label_size = 6, set_size = 6,
+                        label_size = 9, set_size = 8,
                         category.names = sample_names, edge_size = 0) +
     scale_fill_gradient(low = "#F4FAFE", high = "#3f648e") +
     scale_x_continuous(expand = expansion(mult = .2))

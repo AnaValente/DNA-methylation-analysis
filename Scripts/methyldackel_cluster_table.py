@@ -12,7 +12,7 @@ def merge_dfs(df_list):
     merged_dfs = df_list[0]
 
     for df in df_list[1:]:
-        merged_dfs = pd.merge(merged_dfs, df, on=['chr','start','end']) # Merge DataFrames in List
+        merged_dfs = pd.merge(merged_dfs, df, on=['chr','start','end'], how='inner') # Merge DataFrames in List
     
     return merged_dfs
 
@@ -23,32 +23,29 @@ def trim_bedgraph(cutoff, control):
     dataframes = [] # List to store all DataFrames
 
     for file in glob.glob("*CpG.bedGraph"):
+        prefix = file.split('_library', 1)[0]  
+        bedgraph = pd.read_table(file, skiprows=1, header=None, sep='\t', names=['chr', 'start', 'end', prefix, 'methylated_reads', 'unmethylated_reads'])  # Set column names directly
 
-        bedgraph = pd.read_table(file, skiprows=1, header=None, sep='\t')
+        bedgraph['sum_reads'] = bedgraph['methylated_reads'] + bedgraph['unmethylated_reads']
+        bedgraph_filtered = bedgraph[bedgraph['sum_reads'] >= cutoff] # Select number of reads based on the cutoff
+        
+        bedgraph_filtered = bedgraph_filtered[['chr', 'start', 'end', prefix]]
 
-        bedgraph = bedgraph.rename(columns={0:'chr', 1:'start', 2:'end', 3:file.split('_library', 1)[0], 4:'methylated_reads', 5:'unmethylated_reads'})
-
-        bedgraph['sum_reads'+ file.split('_library', 1)[0]] = bedgraph['methylated_reads'] + bedgraph['unmethylated_reads']
-
-        bedgraph_sum = bedgraph[bedgraph['sum_reads'+ file.split('_library', 1)[0]] >= cutoff] # Select number of reads based on the cutoff
-
-        bedgraph_sum = bedgraph_sum.drop(['methylated_reads', 'unmethylated_reads'], axis=1)
-
-        dataframes.append(bedgraph_sum) # Append DataFrames to List
+        dataframes.append(bedgraph_filtered) # Append DataFrames to List
 
     merged_dataframe = merge_dfs(dataframes)
 
-    control_cols = [col for col in merged_dataframe.columns if control in col] # Get all columns names with control name
-    first_cols = ['chr','start','end'] + control_cols
+    # Reorder columns to put control columns first
+    control_cols = [col for col in merged_dataframe.columns if control in col]
+    first_cols = ['chr', 'start', 'end'] + control_cols
+    other_cols = [col for col in merged_dataframe.columns if col not in first_cols]
+    merged_dataframe = merged_dataframe[first_cols + other_cols] 
 
-    merged_dataframe = pd.concat([merged_dataframe[first_cols], merged_dataframe[merged_dataframe.columns.difference(first_cols)].sort_index(axis=1)], ignore_index=False, axis=1)
-    
-    merged_dataframe = merged_dataframe[merged_dataframe.columns.drop(list(merged_dataframe.filter(regex='sum_reads')))]
+    merged_dataframe = merged_dataframe.loc[:, ~merged_dataframe.columns.str.contains('total_reads')]
 
-    merged_dataframe2 = merged_dataframe.iloc[:, 3::]
-    for col in merged_dataframe2.columns:
-        merged_dataframe[['chr','start','end', col]].to_csv(col + '_library_trimmed_CpGs.bedGraph', sep='\t', index=False, header = False)
-    
+    for col in merged_dataframe.columns[3:]:
+        merged_dataframe[['chr', 'start', 'end', col]].to_csv(f"{col}_library_trimmed_CpGs.bedGraph", sep='\t', index=False, header=False)
+
     return merged_dataframe
 
 def comp_meth_frequencies(df, n_replicates, sample_list, control, cutoff, filter = False):
@@ -56,44 +53,41 @@ def comp_meth_frequencies(df, n_replicates, sample_list, control, cutoff, filter
     Filters regions based on cutoff for the difference between samples methylation frequency vs control methylation frequency.
     """
     
-    idx_included = list() # DataFrame to store included regions
-    idx_filtered = list() # DataFrame to store filtered regions
+    idx_included = set() # DataFrame to store included regions
+    idx_filtered = set() # DataFrame to store filtered regions
 
     for i in range(len(df)):
         count = 0
 
         for sample in sample_list:
 
-            diff_samples = list() # List to store difference between samples
-            diff_control = list() # List to store difference between controls
+            diff_samples = set() # List to store difference between samples
+            diff_control = set() # List to store difference between controls
 
             for n in range(1, n_replicates + 1):
                 
                 if sample + "_rep" + str(n) in df.columns:
-                    diff_samples.append(int(df[sample + "_rep" + str(n)].iloc[i])) # Append sample replicates to list
+                    diff_samples.add(int(df[sample + "_rep" + str(n)].iloc[i])) # Append sample replicates to list
                 else:
                     continue
 
                 if control + "_rep" + str(n) in df.columns:
-                    diff_control.append(int(df[control + "_rep" + str(n)].iloc[i])) # Append control replicates to list
+                    diff_control.add(int(df[control + "_rep" + str(n)].iloc[i])) # Append control replicates to list
                 else:
                     continue
                 
             if abs(mean(diff_samples) - mean(diff_control)) >= cutoff:
-                idx_included.append(i) # Add differences in frequency >= cutoff between control and sample to included DataFrame 
+                idx_included.add(i) # Add differences in frequency >= cutoff between control and sample to included DataFrame 
                 count += 1
 
         if count == 1 and filter == True:
             # If only one sample has difference in frequency >= cutoff between control and sample add to filtered DataFrame
-            idx_filtered.append(i)
+            idx_filtered.add(i)
     
     included = df.loc[df.index.isin(idx_included)].reset_index(drop=True)
     filtered = df.loc[df.index.isin(idx_filtered)].reset_index(drop=True)
 
-    if filter == True:
-        return included, filtered
-    else:
-        return included
+    return (included, filtered) if filter else included
 
 def cutoff_heatmap(df, n_replicates, samples, n_samples, control, cutoff):
     """
@@ -119,9 +113,11 @@ def cutoff_genm_regions(df, n_replicates, samples, n_samples, control, cutoff):
 if __name__ == "__main__":
     # Merge bedGraph files and store in a file and trim with a cutoff of 5
     trim_bedgraph_5 = trim_bedgraph(0, sys.argv[len(sys.argv)-4])
+
     trim_bedgraph_5.to_csv('correlation.csv', sep='\t', index=False)
 
     included_df, unfiltered_df = cutoff_heatmap(trim_bedgraph_5, int(sys.argv[len(sys.argv)-1]), list(sys.argv), sys.argv[len(sys.argv)-5], sys.argv[len(sys.argv)-4], int(sys.argv[len(sys.argv)-3]))
+
     removed_df, filtered_df = cutoff_heatmap(trim_bedgraph_5, int(sys.argv[len(sys.argv)-1]), list(sys.argv), sys.argv[len(sys.argv)-5], sys.argv[len(sys.argv)-4], int(sys.argv[len(sys.argv)-2]))
 
     # Save filtered and included regions to files
