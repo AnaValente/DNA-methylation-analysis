@@ -63,7 +63,8 @@ table_trimming <- function(df, n_samples, n_replicates) {
 
   var_df <- var_df[order(var_df$var, decreasing = TRUE), ]
 
-  var_names <- rownames(var_df[0:(nrow(var_df) * 0.1), ]) # Row names of the 10% most variable CpGs
+  # Row names of the 10% most variable CpGs
+  var_names <- rownames(var_df[0:(nrow(var_df) * 0.1), ])
 
   df <- df[as.numeric(var_names), ] # Select the 10% most variable CpGs
 
@@ -140,6 +141,6 @@ pca <- function(df, n_samples, n_replicates, control) {
 }
 
 df <- read.csv(args[1], sep = "\t")
+correlation(df)
 final_df <- table_trimming(df, args[2], args[3])
-correlation(final_df)
 pca(final_df, args[2], args[3], args[4])

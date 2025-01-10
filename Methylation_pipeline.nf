@@ -12,6 +12,7 @@ params.genome = false
 params.refseqGenes = false
 params.noHg38 = false
 params.inclusionBed = false
+params.coverageFilter = 0
 
 c_green = "\033[0;38;5;28m"
 c_yellow = "\033[0;38;5;142m"
@@ -103,12 +104,13 @@ process CORRELATION_AND_CLUSTERING {
     val cutoff_regions
     val cutoff_heatmap
     val n_replicates
+    val coverage_filter
 
     output:
     path "*"
 
     """
-	python3 methyldackel_cluster_table.py ${bedgraphs} ${samples} ${number_samples} ${control} ${cutoff_regions} ${cutoff_heatmap} ${n_replicates} && ./correlation_analysis.R correlation.csv ${number_samples} ${n_replicates} ${control} && ./heatmap.R diff_methylation_filtered.csv 
+	python3 methyldackel_cluster_table.py ${bedgraphs} ${samples} ${number_samples} ${control} ${cutoff_regions} ${cutoff_heatmap} ${n_replicates} ${coverage_filter} && ./correlation_analysis.R correlation.csv ${number_samples} ${n_replicates} ${control} && ./heatmap.R diff_methylation_filtered.csv 
     """
 }
 
@@ -299,7 +301,7 @@ workflow {
         METHYLDACKEL(files, [], REFERENCE_GENOME.out.collect(), samples_chn, params.replicates, params.inclusionBed)
     }
 
-    CORRELATION_AND_CLUSTERING(files, METHYLDACKEL.out.collect(), samples_names, list_samples.size(), control, params.cutoffRegions, params.cutoffHeatmap, params.replicates)
+    CORRELATION_AND_CLUSTERING(files, METHYLDACKEL.out.collect(), samples_names, list_samples.size(), control, params.cutoffRegions, params.cutoffHeatmap, params.replicates,params.coverageFilter)
     METILENE(files, CORRELATION_AND_CLUSTERING.out.collect(), control, samples_chn2, params.replicates)
     
     if (params.noHg38) {

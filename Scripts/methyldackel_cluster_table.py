@@ -53,39 +53,41 @@ def comp_meth_frequencies(df, n_replicates, sample_list, control, cutoff, filter
     Filters regions based on cutoff for the difference between samples methylation frequency vs control methylation frequency.
     """
     
-    idx_included = set() # DataFrame to store included regions
-    idx_filtered = set() # DataFrame to store filtered regions
+    included = pd.DataFrame() # DataFrame to store included regions
+    filtered = pd.DataFrame() # DataFrame to store filtered regions
 
     for i in range(len(df)):
         count = 0
 
         for sample in sample_list:
 
-            diff_samples = set() # List to store difference between samples
-            diff_control = set() # List to store difference between controls
+            diff_samples = list() # List to store difference between samples
+            diff_control = list() # List to store difference between controls
 
             for n in range(1, n_replicates + 1):
                 
                 if sample + "_rep" + str(n) in df.columns:
-                    diff_samples.add(int(df[sample + "_rep" + str(n)].iloc[i])) # Append sample replicates to list
+                    diff_samples.append(int(df[sample + "_rep" + str(n)].iloc[i])) # Append sample replicates to list
                 else:
                     continue
 
                 if control + "_rep" + str(n) in df.columns:
-                    diff_control.add(int(df[control + "_rep" + str(n)].iloc[i])) # Append control replicates to list
+                    diff_control.append(int(df[control + "_rep" + str(n)].iloc[i])) # Append control replicates to list
                 else:
-                    continue
-                
+                    continue   
+            
             if abs(mean(diff_samples) - mean(diff_control)) >= cutoff:
-                idx_included.add(i) # Add differences in frequency >= cutoff between control and sample to included DataFrame 
+                included = pd.concat([included, df.iloc[[i]]]) # Add differences in frequency >= cutoff between control and sample to included DataFrame 
                 count += 1
+            
+            
 
         if count == 1 and filter == True:
             # If only one sample has difference in frequency >= cutoff between control and sample add to filtered DataFrame
-            idx_filtered.add(i)
+            filtered = pd.concat([filtered, df.iloc[[i]]])
     
-    included = df.loc[df.index.isin(idx_included)].reset_index(drop=True)
-    filtered = df.loc[df.index.isin(idx_filtered)].reset_index(drop=True)
+    included = included.drop_duplicates().reset_index(drop=True)
+    filtered = filtered.drop_duplicates().reset_index(drop=True)
 
     return (included, filtered) if filter else included
 
@@ -93,7 +95,7 @@ def cutoff_heatmap(df, n_replicates, samples, n_samples, control, cutoff):
     """
     Filters regions for the hierarchical clustering.
     """
-    samples_names = samples[-(int(n_samples) + 5):-5]
+    samples_names = samples[-(int(n_samples) + 6):-6]
 
     included, filtered = comp_meth_frequencies(df, n_replicates, samples_names, control, cutoff, True)   
 
@@ -103,7 +105,7 @@ def cutoff_genm_regions(df, n_replicates, samples, n_samples, control, cutoff):
     """
     Filters regions for the genomic regions, for each sample.
     """
-    samples_names = samples[-(int(n_samples) + 5):-5]
+    samples_names = samples[-(int(n_samples) + 6):-6]
 
     for sample in samples_names:
         
@@ -112,16 +114,17 @@ def cutoff_genm_regions(df, n_replicates, samples, n_samples, control, cutoff):
 
 if __name__ == "__main__":
     # Merge bedGraph files and store in a file and trim with a cutoff of 5
-    trim_bedgraph_5 = trim_bedgraph(0, sys.argv[len(sys.argv)-4])
+    print(sys.argv)
+    trim_bedgraph = trim_bedgraph(int(sys.argv[len(sys.argv)-1]), sys.argv[len(sys.argv)-5])
 
-    trim_bedgraph_5.to_csv('correlation.csv', sep='\t', index=False)
+    trim_bedgraph.to_csv('correlation.csv', sep='\t', index=False)
 
-    included_df, unfiltered_df = cutoff_heatmap(trim_bedgraph_5, int(sys.argv[len(sys.argv)-1]), list(sys.argv), sys.argv[len(sys.argv)-5], sys.argv[len(sys.argv)-4], int(sys.argv[len(sys.argv)-3]))
+    included_df, unfiltered_df = cutoff_heatmap(trim_bedgraph, int(sys.argv[len(sys.argv)-2]), list(sys.argv), sys.argv[len(sys.argv)-6], sys.argv[len(sys.argv)-5], int(sys.argv[len(sys.argv)-4]))
 
-    removed_df, filtered_df = cutoff_heatmap(trim_bedgraph_5, int(sys.argv[len(sys.argv)-1]), list(sys.argv), sys.argv[len(sys.argv)-5], sys.argv[len(sys.argv)-4], int(sys.argv[len(sys.argv)-2]))
+    removed_df, filtered_df = cutoff_heatmap(trim_bedgraph, int(sys.argv[len(sys.argv)-2]), list(sys.argv), sys.argv[len(sys.argv)-6], sys.argv[len(sys.argv)-5], int(sys.argv[len(sys.argv)-3]))
 
     # Save filtered and included regions to files
     filtered_df.to_csv('diff_methylation_filtered.csv', sep='\t', index=False, header=True)
     included_df.to_csv('diff_methylation_all.csv', sep='\t', index=False, header=True)
 
-    cutoff_genm_regions(included_df, int(sys.argv[len(sys.argv)-1]), list(sys.argv), sys.argv[len(sys.argv)-5], sys.argv[len(sys.argv)-4], int(sys.argv[len(sys.argv)-3]))
+    cutoff_genm_regions(included_df, int(sys.argv[len(sys.argv)-2]), list(sys.argv), sys.argv[len(sys.argv)-6], sys.argv[len(sys.argv)-5], int(sys.argv[len(sys.argv)-4]))

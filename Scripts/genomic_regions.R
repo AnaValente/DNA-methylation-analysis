@@ -82,7 +82,8 @@ genomic_regions_meth <- function(annotations) {
   df_list <- change_annotation(df_list)
 
   df_list <- as.data.frame(df_list)
-  df_list <- na.omit(df_list)
+  df_list[is.na(df_list)] <- 0
+
   row.names(df_list) <- df_list$Regions
   df_list <- df_list[, 2:ncol(df_list), drop = FALSE] # Remove annotation names
 
@@ -95,8 +96,13 @@ genomic_regions_meth <- function(annotations) {
     theme_light() +
     theme(panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(), legend.position = "top",
-          axis.text.x = element_text(angle = 45, hjust = 1),
-          axis.text=element_text(color="black")) +
+          axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+          axis.text.y = element_text(size = 13),
+          axis.title = element_text(size = 14, face = "bold"),
+          axis.title.x = element_text(vjust=-0.5),
+          legend.title = element_text(size = 12),
+          legend.text = element_text(size = 12),
+          axis.text = element_text(color="black")) +
     labs(y = "Nº of CpG sites") + scale_x_discrete() +
     scale_y_continuous(expand = expansion(mult = c(0, .1)))
   ggsave("genomic_regions_CpG.png", width = 20, height = 15, units = "cm")
@@ -168,10 +174,13 @@ genomic_regions_dmr <- function(annotations) {
       theme_light() +
       theme(panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(), legend.position = "top",
-            axis.text.x = element_text(angle = 45, hjust = 1, size = 12),
+            axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+            axis.text.y = element_text(size = 13),
+            axis.title = element_text(size = 14, face = "bold"),
+            axis.title.x = element_text(vjust=-0.5),
             legend.title = element_text(size = 12),
             legend.text = element_text(size = 12),
-            axis.text=element_text(color="black")) +
+            axis.text = element_text(color="black")) +
             scale_fill_manual(values = c("Hypomethylation" = "#619CFF", "Hypermethylation" = "#F8766D")) +
             scale_y_continuous(expand = expansion(mult = c(0, .1))) +
             scale_x_discrete(limits = unique(sample_list$Regions))
