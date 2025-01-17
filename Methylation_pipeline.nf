@@ -13,6 +13,7 @@ params.refseqGenes = false
 params.noHg38 = false
 params.inclusionBed = false
 params.coverageFilter = 0
+params.help = false
 
 c_green = "\033[0;38;5;28m"
 c_yellow = "\033[0;38;5;142m"
@@ -28,6 +29,51 @@ log.info"""
         / \\${c_blue}| ${c_orange}| ${c_reset}|\\| ${c_yellow}| ${c_green}|${c_reset}/ \\${c_green}| ${c_blue}| ${c_reset}|\\| ${c_orange}| ${c_green}|${c_reset}/ \\${c_orange}| ${c_yellow}| ${c_reset}|\\| ${c_blue}| ${c_green}|${c_reset}/ \\${c_yellow}| ${c_green}| ${c_reset}|\\|  ${c_orange}| ${c_blue}|${c_reset}/ \\${c_yellow}| ${c_green}| ${c_reset}|\\${c_reset}
            `-!-' `-!-'   `-!-' `-!-'   `-!-' `-!-'   `-!-'  `-!-'   `-!-' `-
         """.stripIndent()
+
+if( params.help ) {
+
+help = """
+Usage:
+    nextflow run Methylation_pipeline.nf --files <path> --samples <string> --replicates <integer> --genome <path> --refseqGenes <path> [options]
+
+Mandatory arguments:
+ --files 
+    Path to scripts and samples folder.
+ --samples 
+    [String] sample names separated by comma (always write the control name first!).
+ --replicates
+    [Integer] number of sample replicates.
+ --genome
+    Path to the hg38 or other reference genome file (.fa.gz) (available in: http://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz).
+ --refseqGenes
+    Path to the refseq genes file in BED format (version from 2024-09-11 can be found in scripts folder for hg38 genome in GitHub).
+
+Optional arguments:
+ --concat
+    Option to concatenate BAM files from different runs.
+ --cellTpm
+    Optional file containing two collumns, one with gene names and the other with expression levels in transcripts per million (TPM) for a cell line or cell type identical or similar to the cells under study (available in: https://www.ebi.ac.uk/gxa/experiments/E-MTAB-2770/Results) for gene name filtering.
+ --noHg38
+    Option to skip genomic regions output if not using hg38 reference genome.
+ --cutoffRegions
+    [Integer] cutoff (from 1 to 100) for the difference between samples methylation frequency vs control methylation frequency for genomic annotations [default: ${params.cutoffRegions}].
+ --cutoffHeatmap
+    [Integer] cutoff (from 1 to 100) for the difference between samples methylation frequency vs control methylation frequency for clustering analysis [default: ${params.cutoffHeatmap}].
+ --inclusionBed
+    Optional BED file containing regions of interest (A BED file containing CpG islands regions for hg38 reference genome can be found in scripts folder).
+
+!!IMPORTANT!!
+> All samples and additional files must be placed in the scripts folder.
+> BAM files should start with the samples name provided in the –-samples input, followed by replicate number.
+> If there are no replicates, input the number 1.
+> Example:
+    File names: Control_rep1_library.bam; Sample1_rep1_library.bam
+    Pipeline: --samples "Control","Sample1" --replicates 1
+""".stripMargin()
+
+println(help)
+exit(0)
+}
 
 process REFERENCE_GENOME {
     // Download fasta file of the reference genome 
@@ -240,8 +286,8 @@ process FINAL_REPORT {
     echo -e "Methyldackel:\\n=============" >> Final_report.txt
     wc -l *_library_sorted_CpG.bedGraph | sed 's/_library.*//g' | awk '{print $2 ":", $1-1, "CpG sites\\n"}' >> Final_report.txt
     echo -e "\\nCorrelation and clustering:\\n===========================" >> Final_report.txt
-    echo -e "$(wc -l correlation.csv | awk '{print $1-1}')" "CpG sites were used for the correlation matrix and PCA\\n" >> Final_report.txt
-    echo -e "$(wc -l diff_methylation_filtered.csv | awk '{print $1-1}')" "CpG sites were used for the hierarchical clustering heatmap with a difference of !{cutoff_heatmap}% between the controls and samples\\n" >> Final_report.txt
+    echo -e "$(wc -l correlation.csv | awk '{print $1-1}')" "CpG sites were used for the correlation matrix and" "$(python -c "print(round($(wc -l correlation.csv | awk '{print $1-1}') * 0.1))")" "CpG sites the for Principal Component Analysis\\n" >> Final_report.txt
+    echo -e "$(wc -l diff_methylation_filtered.csv | awk '{print $1-1}')" "CpG sites were used for the hierarchical clustering with a difference of !{cutoff_heatmap}% between the controls and samples\\n" >> Final_report.txt
     echo -e "\\nMetilene:\\n=========" >> Final_report.txt
     
     for sample in !{samples}; do

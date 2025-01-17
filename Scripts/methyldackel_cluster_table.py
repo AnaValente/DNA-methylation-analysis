@@ -79,8 +79,6 @@ def comp_meth_frequencies(df, n_replicates, sample_list, control, cutoff, filter
             if abs(mean(diff_samples) - mean(diff_control)) >= cutoff:
                 included = pd.concat([included, df.iloc[[i]]]) # Add differences in frequency >= cutoff between control and sample to included DataFrame 
                 count += 1
-            
-            
 
         if count == 1 and filter == True:
             # If only one sample has difference in frequency >= cutoff between control and sample add to filtered DataFrame
@@ -114,7 +112,6 @@ def cutoff_genm_regions(df, n_replicates, samples, n_samples, control, cutoff):
 
 if __name__ == "__main__":
     # Merge bedGraph files and store in a file and trim with a cutoff of 5
-    print(sys.argv)
     trim_bedgraph = trim_bedgraph(int(sys.argv[len(sys.argv)-1]), sys.argv[len(sys.argv)-5])
 
     trim_bedgraph.to_csv('correlation.csv', sep='\t', index=False)
@@ -122,7 +119,12 @@ if __name__ == "__main__":
     included_df, unfiltered_df = cutoff_heatmap(trim_bedgraph, int(sys.argv[len(sys.argv)-2]), list(sys.argv), sys.argv[len(sys.argv)-6], sys.argv[len(sys.argv)-5], int(sys.argv[len(sys.argv)-4]))
 
     removed_df, filtered_df = cutoff_heatmap(trim_bedgraph, int(sys.argv[len(sys.argv)-2]), list(sys.argv), sys.argv[len(sys.argv)-6], sys.argv[len(sys.argv)-5], int(sys.argv[len(sys.argv)-3]))
-
+    
+    if len(included_df) < 5:
+        raise ValueError(f"No regions found with difference in methylation frequency >= {int(sys.argv[len(sys.argv)-4])} between control and samples. Please try a different cutoff value.")
+    elif len(filtered_df) < 5:
+        raise ValueError(f"No regions found with difference in methylation frequency >= {int(sys.argv[len(sys.argv)-3])} between control and samples. Please try a different cutoff value.")
+    
     # Save filtered and included regions to files
     filtered_df.to_csv('diff_methylation_filtered.csv', sep='\t', index=False, header=True)
     included_df.to_csv('diff_methylation_all.csv', sep='\t', index=False, header=True)
