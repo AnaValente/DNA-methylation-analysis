@@ -1,5 +1,5 @@
 # DNA-methylation-analysis
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14169665.svg)](https://doi.org/10.5281/zenodo.14169665)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14711920.svg)](https://doi.org/10.5281/zenodo.14711920)
 
 This RRBS Nextflow pipeline was created to discover the genes associated with differentially methylated regions from the CpG methylation patterns using [MethylDackel](https://github.com/dpryan79/MethylDackel) and [Metilene](http://legacy.bioinf.uni-leipzig.de/Software/metilene/).
 
