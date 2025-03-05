@@ -47,6 +47,6 @@ if __name__ == "__main__":
         common_genes_NM['Gene Name'].to_csv(sys.argv[1]+'__merged_genes.txt', index=False, header=False, sep='\t')
     else:
 
-        ctrl_NM_genes = pd.read_csv(sys.argv[1]+'__refseq.bedgraph', sep='\t', header=None, names=['chr','start','end','mean_methylation_dif','Gene Name','dist'])
+        ctrl_NM_genes = pd.read_csv(sys.argv[1]+'_refseq.bedgraph', sep='\t', header=None, names=['chr','start','end','mean_methylation_dif','Gene Name','dist'])
         ctrl_NM_genes.to_csv(sys.argv[1]+'__merged_genes.bedgraph', index=False, header=False, sep='\t')
         ctrl_NM_genes['Gene Name'].to_csv(sys.argv[1]+'__merged_genes.txt', index=False, header=False, sep='\t')
